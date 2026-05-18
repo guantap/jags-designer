@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JAGS · Diseñador de Jugadas · Combinador + Simulador</title>
+<style>
+  :root{
+    --bg-0:#06080d; --bg-1:#0c1018; --bg-2:#141a25; --bg-3:#1a212e;
+    --ink:#e9eef7; --ink-dim:#9aa3b8; --ink-faint:#5d6478;
+    --line:#1f2735;
+    --accent:#00e5ff; --accent-2:#ff3b6b; --accent-3:#ffd23f; --accent-4:#7c4dff; --accent-5:#27e08a;
+    --grad-akbal:linear-gradient(135deg,#7c4dff 0%,#00e5ff 100%);
+    --grad-kinich:linear-gradient(135deg,#ff3b6b 0%,#ffd23f 100%);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg-0);color:var(--ink);
+    font-family:'Iowan Old Style','Georgia',serif;line-height:1.55;
+    min-height:100vh;
+    padding:1.5rem clamp(1rem,3vw,2.5rem);
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:-2;
+    background:
+      radial-gradient(ellipse 1200px 800px at 80% -10%, rgba(124,77,255,.15), transparent 60%),
+      radial-gradient(ellipse 900px 700px at -10% 110%, rgba(0,229,255,.10), transparent 60%),
+      var(--bg-0);
+  }
+  h1,h2,h3,h4{font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;font-weight:900;letter-spacing:-.01em;text-transform:uppercase}
+  .header{margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem}
+  .header h1{font-size:clamp(1.6rem,3vw,2.2rem);background:var(--grad-kinich);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1;letter-spacing:-.02em}
+  .header .sub{font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.78rem;letter-spacing:.3em;color:var(--accent);margin-top:.4rem}
+  .header-right{font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.72rem;color:var(--ink-faint);letter-spacing:.15em;text-align:right}
+
+  .designer-app{display:grid;grid-template-columns:1fr 400px;gap:1.5rem}
+  @media (max-width:1100px){.designer-app{grid-template-columns:1fr}}
+
+  .canvas-panel{background:var(--bg-1);border:1px solid var(--line);border-radius:8px;padding:1rem}
+  .d-toolbar{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.8rem;padding-bottom:.8rem;border-bottom:1px solid var(--line)}
+  .d-tool-group{display:flex;gap:.35rem;align-items:center;flex-wrap:wrap}
+  .d-tool-label{font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.68rem;color:var(--ink-faint);letter-spacing:.15em;margin-right:.4rem}
+  .d-tool-btn{
+    background:var(--bg-2);border:1px solid var(--line);color:var(--ink);
+    padding:.5rem .7rem;border-radius:5px;cursor:pointer;
+    font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;font-weight:700;font-size:.78rem;
+    letter-spacing:.05em;text-transform:uppercase;transition:all .15s;
+    display:flex;align-items:center;gap:.35rem;
+  }
+  .d-tool-btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .d-tool-btn.active{background:var(--accent);color:#000;border-color:var(--accent)}
+  .d-tool-btn .d-swatch{width:11px;height:11px;border-radius:50%;border:1px solid #000}
+  .d-tool-btn.d-danger:hover{border-color:var(--accent-2);color:var(--accent-2)}
+  .d-tool-btn.d-toggle.active{background:var(--accent-4);color:#fff;border-color:var(--accent-4)}
+
+  .d-canvas-wrap{position:relative;background:#0a0e15;border:1px solid var(--line);border-radius:6px;overflow:hidden;aspect-ratio:600 / 360;width:100%}
+  #d-field{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;user-select:none;-webkit-user-select:none;touch-action:none}
+  .d-hint{position:absolute;bottom:.7rem;left:.7rem;right:.7rem;background:rgba(6,8,13,.85);border:1px solid var(--accent);border-radius:5px;padding:.45rem .7rem;font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.68rem;color:var(--accent);letter-spacing:.05em;pointer-events:none;backdrop-filter:blur(6px)}
+
+  .d-side{display:flex;flex-direction:column;gap:.9rem}
+  .d-panel{background:var(--bg-1);border:1px solid var(--line);border-radius:10px;padding:1rem 1.1rem}
+  .d-panel-num{font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;color:var(--accent);font-size:.7rem;letter-spacing:.18em;margin-bottom:.5rem;font-weight:600;text-transform:uppercase}
+  .d-panel-h3{font-size:1rem;margin-bottom:.7rem;color:var(--accent-3);letter-spacing:0;font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;text-transform:uppercase;font-weight:900}
+  .d-panel-row{display:grid;grid-template-columns:80px 1fr;gap:.6rem;align-items:center;margin-bottom:.55rem}
+  .d-panel-row label{font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.68rem;color:var(--ink-faint);letter-spacing:.15em}
+  .d-select{
+    width:100%;background:var(--bg-2);border:1px solid var(--line);color:var(--ink);
+    padding:.5rem .6rem;border-radius:5px;
+    font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;font-weight:700;font-size:.85rem;
+    letter-spacing:.05em;text-transform:uppercase;cursor:pointer;
+  }
+  .d-select:hover{border-color:var(--accent)}
+  .d-concept-info{margin-top:.6rem;background:var(--bg-2);border:1px solid var(--line);border-radius:5px;padding:.55rem .8rem;font-size:.78rem;color:var(--ink-dim);font-family:'Iowan Old Style','Georgia',serif}
+  .d-concept-info b{color:var(--accent-3);font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;font-size:.9rem;letter-spacing:.05em;display:block;margin-bottom:.2rem}
+
+  .d-warn{margin-top:.7rem;padding:.55rem .8rem;border-radius:5px;font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.72rem;letter-spacing:.05em;border:1px solid;display:flex;align-items:center;gap:.5rem}
+  .d-warn.bad{background:rgba(255,59,107,.08);border-color:var(--accent-2);color:var(--accent-2)}
+  .d-warn.ok{background:rgba(39,224,138,.08);border-color:var(--accent-5);color:var(--accent-5)}
+
+  .d-formation-row{display:flex;gap:.5rem}
+  .d-formation-btn{flex:1;background:var(--bg-2);border:1px solid var(--line);color:var(--ink);padding:.5rem;border-radius:5px;cursor:pointer;font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;font-weight:700;font-size:.85rem;letter-spacing:.05em;text-transform:uppercase;transition:all .15s}
+  .d-formation-btn:hover{border-color:var(--accent-4)}
+  .d-formation-btn.active{background:var(--accent-4);color:#fff;border-color:var(--accent-4)}
+
+  .d-players-list{display:flex;flex-direction:column;gap:.35rem}
+  .d-player-row{display:flex;align-items:center;gap:.5rem;padding:.4rem .55rem;background:var(--bg-2);border:1px solid var(--line);border-radius:5px;cursor:pointer;transition:border-color .15s}
+  .d-player-row.selected{border-color:var(--accent)}
+  .d-player-dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;font-weight:900;font-size:.8rem;color:#000;border:2px solid #000;flex-shrink:0}
+  .d-player-info{flex:1;font-size:.74rem;color:var(--ink-dim);font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace}
+  .d-player-info b{color:var(--ink);font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;letter-spacing:.05em;font-size:.85rem}
+  .d-player-zone{color:var(--accent-3);font-size:.7rem}
+  .d-player-clear{background:transparent;border:1px solid var(--line);color:var(--ink-faint);padding:.2rem .4rem;border-radius:4px;cursor:pointer;font-size:.62rem;font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;letter-spacing:.1em}
+  .d-player-clear:hover{border-color:var(--accent-2);color:var(--accent-2)}
+
+  .d-cov-list{display:flex;flex-direction:column;gap:.45rem}
+  .d-cov-row{
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    grid-template-areas:
+      "icon name badges"
+      "icon detail detail";
+    column-gap:.7rem;row-gap:.15rem;
+    align-items:center;
+    padding:.6rem .8rem;
+    background:var(--bg-2);
+    border:1px solid var(--line);
+    border-radius:6px;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .d-cov-row:hover{border-color:var(--accent-4)}
+  .d-cov-row.selected{border-color:var(--accent-4);background:rgba(124,77,255,.10)}
+  .d-cov-icon{
+    grid-area:icon;
+    width:28px;height:28px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:900;font-size:.92rem;
+    font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;
+    flex-shrink:0;
+  }
+  .d-cov-icon.ok{background:var(--accent-5);color:#000}
+  .d-cov-icon.bad{background:var(--accent-2);color:#fff}
+  .d-cov-icon.empty{background:var(--bg-3);color:var(--ink-faint);border:1px solid var(--ink-faint)}
+  .d-cov-name{
+    grid-area:name;
+    font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;
+    font-weight:700;letter-spacing:.04em;
+    color:var(--ink);font-size:.82rem;
+    text-transform:uppercase;
+    line-height:1.15;
+  }
+  .d-cov-detail{
+    grid-area:detail;
+    color:var(--ink-dim);
+    font-size:.7rem;
+    font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;
+    letter-spacing:.02em;
+    line-height:1.3;
+  }
+  .d-cov-open{
+    grid-area:badges;
+    display:flex;gap:.25rem;flex-wrap:nowrap;
+    align-items:center;
+  }
+  .d-cov-open span{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:20px;height:20px;border-radius:50%;
+    font-size:.7rem;font-weight:900;
+    color:#000;
+    font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;
+    border:1.5px solid rgba(0,0,0,0.4);
+  }
+
+  .d-verdict{margin-top:.8rem;padding:.7rem .9rem;border-radius:5px;text-align:center;border:1px solid}
+  .d-verdict.good{background:rgba(39,224,138,.08);border-color:var(--accent-5);color:var(--accent-5)}
+  .d-verdict.bad{background:rgba(255,59,107,.08);border-color:var(--accent-2);color:var(--accent-2)}
+  .d-verdict.empty{background:var(--bg-2);border-color:var(--line);color:var(--ink-faint)}
+  .d-verdict-num{font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;font-weight:900;font-size:1.7rem;line-height:1;letter-spacing:-.02em}
+  .d-verdict-label{font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.7rem;letter-spacing:.15em;margin-top:.25rem;font-weight:600}
+
+  .d-narrative{margin-top:.8rem;background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:.8rem .9rem;font-size:.82rem;color:var(--ink-dim);font-family:'Iowan Old Style','Georgia',serif;line-height:1.5}
+  .d-narrative h5{font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;font-weight:900;font-size:.78rem;letter-spacing:.15em;color:var(--accent-3);text-transform:uppercase;margin-bottom:.4rem}
+  .d-narrative p{margin:0 0 .4rem}
+  .d-narrative p:last-child{margin-bottom:0}
+  .d-narrative .nb{color:var(--accent-5);font-weight:600}
+  .d-narrative .nr{color:var(--accent-2);font-weight:600}
+  .d-narrative .ny{color:var(--accent-3);font-weight:600}
+  .d-narrative .nc{color:var(--accent);font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.78rem;padding:.05rem .3rem;border:1px solid var(--accent);border-radius:3px;letter-spacing:.05em}
+
+  .d-checklist{list-style:none;padding:0;margin:.4rem 0 0;max-height:240px;overflow-y:auto}
+  .d-check-item{display:flex;align-items:flex-start;gap:.55rem;padding:.45rem 0;border-bottom:1px dashed var(--line)}
+  .d-check-item:last-child{border-bottom:none}
+  .d-check-icon{flex-shrink:0;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.72rem;font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;margin-top:.05rem}
+  .d-check-icon.pending{background:var(--bg-3);color:var(--ink-faint);border:1px solid var(--ink-faint)}
+  .d-check-icon.ok{background:var(--accent-5);color:#000}
+  .d-check-icon.fail{background:var(--accent-2);color:#fff}
+  .d-check-text{flex:1;font-size:.78rem}
+  .d-check-text b{color:var(--ink);font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;letter-spacing:.04em;font-size:.82rem;display:block}
+  .d-check-text span{color:var(--ink-faint);font-size:.72rem;font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace}
+  .d-check-side{font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.6rem;letter-spacing:.1em;color:var(--accent-4);padding:.1rem .35rem;border:1px solid var(--accent-4);border-radius:3px;margin-left:.4rem}
+
+  .d-save-row{display:flex;gap:.4rem;flex-wrap:wrap}
+  .d-saved-list{margin-top:.6rem;display:flex;flex-direction:column;gap:.3rem;max-height:160px;overflow-y:auto}
+  .d-saved-item{display:flex;justify-content:space-between;align-items:center;padding:.4rem .6rem;background:var(--bg-2);border:1px solid var(--line);border-radius:4px;font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.72rem}
+  .d-saved-item span{flex:1;cursor:pointer;color:var(--ink-dim)}
+  .d-saved-item span:hover{color:var(--accent)}
+  .d-saved-item b{color:var(--ink);font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;letter-spacing:.05em;margin-right:.5rem;font-size:.8rem}
+
+  footer{margin-top:2rem;padding-top:1.2rem;border-top:1px solid var(--line);text-align:center;font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.7rem;color:var(--ink-faint);letter-spacing:.2em}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="sub">JAGS · AIR RAID 5V5 IFAF</div>
+    <h1>Diseñador de Jugadas</h1>
+  </div>
+  <div class="header-right">
+    COMBINADOR DE CONCEPTOS<br>
+    SIMULADOR DEFENSIVO<br>
+    MAPA DE 5 ZONAS
+  </div>
+</div>
+
+<div class="designer-app">
+
+  <!-- ============== CANVAS ============== -->
+  <div class="canvas-panel">
+    <div class="d-toolbar">
+      <div class="d-tool-group">
+        <span class="d-tool-label">JUGADOR</span>
+        <button class="d-tool-btn active" data-d-player="X"><span class="d-swatch" style="background:#f97316"></span>X</button>
+        <button class="d-tool-btn" data-d-player="H"><span class="d-swatch" style="background:#06b6d4"></span>H</button>
+        <button class="d-tool-btn" data-d-player="Y"><span class="d-swatch" style="background:#a855f7"></span>Y</button>
+        <button class="d-tool-btn" data-d-player="C"><span class="d-swatch" style="background:#fbbf24"></span>C</button>
+        <button class="d-tool-btn" data-d-player="QB" id="d-btn-qb" style="display:none"><span class="d-swatch" style="background:#dc2626"></span>QB</button>
+      </div>
+      <div style="flex:1"></div>
+      <div class="d-tool-group">
+        <button class="d-tool-btn d-toggle active" id="d-toggle-zones">👁 ZONAS</button>
+        <button class="d-tool-btn d-toggle" id="d-toggle-defense">🛡 EMULAR DEFENSA</button>
+        <button class="d-tool-btn d-toggle" id="d-toggle-2qb">🏈 DOBLE QB</button>
+      </div>
+      <div class="d-tool-group">
+        <button class="d-tool-btn d-danger" id="d-undo-btn">↶ DESHACER</button>
+        <button class="d-tool-btn d-danger" id="d-clear-btn">🗑 LIMPIAR</button>
+      </div>
+    </div>
+
+    <div class="d-canvas-wrap">
+      <svg id="d-field" viewBox="0 0 600 360" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="d-hint" id="d-hint">Selecciona un jugador y haz click en el campo para dibujar su ruta</div>
+    </div>
+  </div>
+
+  <!-- ============== CONTROLS ============== -->
+  <div class="d-side">
+
+    <div class="d-panel">
+      <div class="d-panel-num">01 · CONCEPTOS COMBINADOS</div>
+      <h3 class="d-panel-h3">Mezcla 2 lados</h3>
+      <div class="d-panel-row">
+        <label>FUERTE</label>
+        <select class="d-select" id="d-strong"></select>
+      </div>
+      <div class="d-panel-row">
+        <label>DÉBIL</label>
+        <select class="d-select" id="d-weak"></select>
+      </div>
+      <div class="d-concept-info" id="d-concept-info"></div>
+      <div id="d-combo-warn"></div>
+    </div>
+
+    <div class="d-panel">
+      <div class="d-panel-num">02 · FORMACIÓN</div>
+      <div class="d-formation-row" style="flex-wrap:wrap">
+        <button class="d-formation-btn active" data-d-formation="2x1">2X1</button>
+        <button class="d-formation-btn" data-d-formation="bunch">RACIMO</button>
+        <button class="d-formation-btn" data-d-formation="trips">TRIPLE</button>
+        <button class="d-formation-btn" id="d-mirror-btn" style="flex:0 0 auto;padding:.5rem .8rem">↔ ESPEJO</button>
+      </div>
+      <div class="d-panel-row" style="margin-top:.6rem">
+        <label>SNAP A</label>
+        <div class="d-formation-row" id="d-snap-row">
+          <button class="d-formation-btn active" data-d-snap="QB">QB</button>
+          <button class="d-formation-btn" data-d-snap="X">X</button>
+          <button class="d-formation-btn" data-d-snap="H">H</button>
+          <button class="d-formation-btn" data-d-snap="Y">Y</button>
+        </div>
+      </div>
+      <div id="d-2qb-row" style="display:none;margin-top:.6rem">
+        <div class="d-panel-row">
+          <label>PASADOR 2°</label>
+          <div class="d-formation-row" id="d-passer-row">
+            <button class="d-formation-btn" data-d-passer="X">X</button>
+            <button class="d-formation-btn" data-d-passer="H">H</button>
+            <button class="d-formation-btn" data-d-passer="Y">Y</button>
+            <button class="d-formation-btn active" data-d-passer="C">C</button>
+            <button class="d-formation-btn" data-d-passer="QB">QB</button>
+          </div>
+        </div>
+        <p style="font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.65rem;color:var(--ink-faint);letter-spacing:.05em;margin:.4rem 0 0">Este receptor retrocede detrás de la LDE · QB hace pase lateral · QB sale como elegible · Receptor lanza el pase forward</p>
+      </div>
+    </div>
+
+    <div class="d-panel">
+      <div class="d-panel-num">03 · JUGADORES</div>
+      <div class="d-players-list" id="d-players-list"></div>
+    </div>
+
+    <div class="d-panel">
+      <div class="d-panel-num">04 · SIMULADOR VS COBERTURAS</div>
+      <div class="d-cov-list" id="d-cov-list"></div>
+      <div class="d-verdict empty" id="d-verdict">
+        <div class="d-verdict-num" id="d-verdict-num">0/5</div>
+        <div class="d-verdict-label" id="d-verdict-label">SIN RUTAS</div>
+      </div>
+      <div id="d-narrative" class="d-narrative"></div>
+    </div>
+
+    <div class="d-panel">
+      <div class="d-panel-num">05 · CHECKLIST CONCEPTOS</div>
+      <ul class="d-checklist" id="d-checklist"></ul>
+    </div>
+
+    <div class="d-panel">
+      <div class="d-panel-num">06 · GUARDAR JUGADA</div>
+      <div class="d-save-row">
+        <input type="text" id="d-save-name" placeholder="Nombre de la jugada" style="flex:1;background:var(--bg-2);border:1px solid var(--line);color:var(--ink);padding:.5rem .6rem;border-radius:5px;font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.78rem">
+        <button class="d-tool-btn" id="d-save-btn">💾 GUARDAR</button>
+      </div>
+      <div class="d-save-row" style="margin-top:.5rem">
+        <button class="d-tool-btn" id="d-export-btn" style="flex:1">⬇ EXPORTAR JSON</button>
+        <button class="d-tool-btn" id="d-import-btn" style="flex:1">⬆ IMPORTAR JSON</button>
+      </div>
+      <input type="file" id="d-import-file" accept="application/json" style="display:none">
+      <div class="d-saved-list" id="d-saved-list"></div>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+'use strict';
+
+// ==================== CONSTANTS ====================
+// Campo de 20 yardas + zona backfield extendida (10.5y). 10px = 1y. LOS en y=240.
+const D_FIELD = { w: 600, h: 360, losY: 240, endZoneY: 30 };
+const D_COLORS = { X:'#f97316', H:'#06b6d4', Y:'#a855f7', C:'#fbbf24' };
+const D_QB_COLOR = '#dc2626';
+
+const D_FORMATIONS = {
+  '2x1': {
+    X: { x: 80,  y: 240 },
+    H: { x: 230, y: 240 },
+    C: { x: 300, y: 240 },
+    Y: { x: 470, y: 240 },
+    QB:{ x: 300, y: 285 }
+  },
+  'bunch': {
+    X: { x: 250, y: 240 },
+    C: { x: 285, y: 240 },
+    Y: { x: 320, y: 240 },
+    H: { x: 355, y: 240 },
+    QB:{ x: 285, y: 285 }
+  },
+  // TRIPS: C siempre en el centro (snapper). Los 3 receptores (X, H, Y) apilados a la derecha.
+  'trips': {
+    C: { x: 300, y: 240 },  // centro (snapper) - fijo en medio
+    X: { x: 380, y: 240 },  // trips inside
+    H: { x: 440, y: 240 },  // trips middle
+    Y: { x: 500, y: 240 },  // trips outside
+    QB:{ x: 300, y: 285 }
+  },
+};
+
+// Quién recibe el snap. Independiente de la formación: el C siempre snapea,
+// pero puede mandarlo atrás al QB o lateralmente a otro elegible (Wildcat).
+function dSnapTo() { return dState.snapTo || 'QB'; }
+
+// 5 zonas: 3 cortas (LDE→10y, y:140-240) + 2 profundas (10y+, y:30-140)
+const D_ZONES = [
+  { id:1, name:'CORTA-I', short:'CORTA-I', x:20,  y:140, w:180, h:100, color:'#00e5ff' },
+  { id:2, name:'MEDIO',   short:'MEDIO',   x:200, y:140, w:200, h:100, color:'#ff3b6b' },
+  { id:3, name:'CORTA-D', short:'CORTA-D', x:400, y:140, w:180, h:100, color:'#27e08a' },
+  { id:4, name:'PROFUNDA-I', short:'PROF-I', x:20,  y:30,  w:280, h:110, color:'#7c4dff' },
+  { id:5, name:'PROFUNDA-D', short:'PROF-D', x:300, y:30,  w:280, h:110, color:'#7c4dff' }
+];
+
+// ==================== STATE ====================
+const dState = {
+  formation: '2x1',
+  selectedPlayer: 'X',
+  routes: { X: [], H: [], Y: [], C: [], QB: [] },
+  history: [],
+  concepts: { strong: 'snag', weak: 'drag' },
+  showZones: true,
+  showDefense: false,
+  selectedCoverage: 'cover2',
+  mirror: false,
+  doubleQB: false,
+  secondPasser: 'C',
+  snapTo: 'QB'
+};
+
+// ==================== HELPERS ====================
+function dYToYards(y) { return Math.max(0, Math.round((D_FIELD.losY - y) / 10)); }
+function dGetEnd(p) { const r = dState.routes[p]; return (!r || r.length === 0) ? null : r[r.length - 1]; }
+function dGetStart(p) {
+  const pos = (p === 'QB') ? D_FORMATIONS[dState.formation].QB : D_FORMATIONS[dState.formation][p];
+  return dState.mirror ? { x: 600 - pos.x, y: pos.y } : pos;
+}
+function dGetQB() { return dGetStart('QB'); }
+function dIsSecondPasser(p) { return dState.doubleQB && p === dState.secondPasser; }
+// Lista de jugadores con rol receptor activo (route runners)
+// Normal: todos menos el snap recipient (primer pasador)
+// Doble QB: todos menos el segundo pasador (el primer pasador ya entregó y sale como receptor)
+function dRouteRunners() {
+  const all = ['X','H','Y','C','QB'];
+  if (!dState.doubleQB) return all.filter(p => p !== dSnapTo());
+  return all.filter(p => p !== dState.secondPasser);
+}
+function dFlipRoutes() {
+  dPushHistory();
+  dState.mirror = !dState.mirror;
+  ['X','H','Y','C','QB'].forEach(p => {
+    dState.routes[p] = (dState.routes[p] || []).map(pt => ({ x: 600 - pt.x, y: pt.y }));
+  });
+}
+function dGetSide(point) { return point && point.x < 300 ? 'L' : 'R'; }
+function dHasRoute(p) { return dState.routes[p] && dState.routes[p].length > 0; }
+function dGetActivePlayers() { return dRouteRunners().filter(dHasRoute); }
+// Sólo receptores reales (endpoint estrictamente delante de la LDE).
+// Excluye pasadores con movimiento pre-throw detrás de la LDE.
+function dActiveReceivers() {
+  return dGetActivePlayers().filter(p => {
+    const e = dGetEnd(p);
+    return e && e.y < D_FIELD.losY;
+  });
+}
+function dGetEndDepth(p) { const e = dGetEnd(p); return e ? dYToYards(e.y) : null; }
+function dDistance(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+function dZoneOf(point) {
+  if (!point) return null;
+  for (const z of D_ZONES) {
+    if (point.x >= z.x && point.x <= z.x + z.w &&
+        point.y >= z.y && point.y <= z.y + z.h) return z.id;
+  }
+  return null;
+}
+function dPlayerEndZone(p) { return dZoneOf(dGetEnd(p)); }
+
+function dIsCrosser(p) {
+  const r = dState.routes[p];
+  if (!r || r.length < 1) return false;
+  const start = dGetStart(p);
+  const end = r[r.length - 1];
+  const horizMove = Math.abs(end.x - start.x);
+  const vertMove = Math.abs(end.y - start.y);
+  return horizMove > 150 && horizMove > vertMove * 0.7;
+}
+function dCrosserDirection(p) {
+  if (!dIsCrosser(p)) return null;
+  const s = dGetStart(p), e = dGetEnd(p);
+  return e.x > s.x ? 'R' : 'L';
+}
+function dSegmentsIntersect(p1, p2, p3, p4) {
+  function ccw(A, B, C) { return (C.y - A.y) * (B.x - A.x) > (B.y - A.y) * (C.x - A.x); }
+  return ccw(p1, p3, p4) !== ccw(p2, p3, p4) && ccw(p1, p2, p3) !== ccw(p1, p2, p4);
+}
+function dStrongSide(playersSubset) {
+  // Sólo cuentan los receptores reales (delante de la LDE), no pasadores con movimiento backfield
+  const players = playersSubset || dActiveReceivers();
+  const sides = { L: 0, R: 0 };
+  players.forEach(p => { const e = dGetEnd(p); if (e) sides[dGetSide(e)]++; });
+  if (sides.L >= 3) return 'L';
+  if (sides.R >= 3) return 'R';
+  if (sides.L > sides.R) return 'L';
+  if (sides.R > sides.L) return 'R';
+  return null;
+}
+function dPlayersOnSide(side) {
+  return dGetActivePlayers().filter(p => dGetSide(dGetEnd(p)) === side);
+}
+
+// ==================== CONCEPTS (strong-side) ====================
+// Reglas refactorizadas: aceptan opcional `players` (subset). Defecto = todos los activos.
+const D_CONCEPTS = {
+  snag: {
+    name: 'SNAG',
+    description: 'Triángulo 3 niveles del mismo lado: ALTO + MEDIO + BAJO. Flat defender 2v1.',
+    rules: [
+      { id:'three_same_side', title:'3 rutas en el mismo lado', detail:'Concentración a izq o der',
+        validate: (P) => { const ss = dStrongSide(P||dGetActivePlayers()); return ss !== null && (P||dGetActivePlayers()).filter(p => dGetSide(dGetEnd(p)) === ss).length >= 3; } },
+      { id:'three_depths', title:'3 alturas distintas (ALTO/MEDIO/BAJO)', detail:'12y+ · 5–8y · 2–4y',
+        validate: (P) => { const d = (P||dGetActivePlayers()).map(p => dGetEndDepth(p)); return d.some(x => x >= 12) && d.some(x => x >= 5 && x <= 8) && d.some(x => x >= 1 && x <= 4); } },
+      { id:'low_flat', title:'Ruta BAJA real (FLAT 2-4y)', detail:'Pieza clave del SNAG',
+        validate: (P) => (P||dGetActivePlayers()).some(p => { const d = dGetEndDepth(p); return d >= 1 && d <= 4; }) }
+    ]
+  },
+  mesh: {
+    name: 'MESH',
+    description: '2 rutas que se cruzan a 3-7y. Picks vs man, huecos vs zone.',
+    rules: [
+      { id:'two_crossers', title:'Exactamente 2 crossers', detail:'Dos rutas que cruzan horizontalmente',
+        validate: (P) => (P||dGetActivePlayers()).filter(p => dIsCrosser(p)).length >= 2 },
+      { id:'opposite_dirs', title:'Crossers en sentidos OPUESTOS', detail:'Uno L→R, otro R→L',
+        validate: (P) => { const dirs = (P||dGetActivePlayers()).filter(p => dIsCrosser(p)).map(p => dCrosserDirection(p)); return dirs.includes('L') && dirs.includes('R'); } },
+      { id:'shallow_cross', title:'Cruce shallow (3-7y)', detail:'Profundidad baja',
+        validate: (P) => { const cr = (P||dGetActivePlayers()).filter(p => dIsCrosser(p)); if (cr.length < 2) return false; return cr.every(p => { const d = dGetEndDepth(p); return d >= 2 && d <= 7; }); } },
+      { id:'mesh_point', title:'Las rutas se cruzan físicamente', detail:'Trayectorias intersectan',
+        validate: (P) => { const cr = (P||dGetActivePlayers()).filter(p => dIsCrosser(p)); if (cr.length < 2) return false; const p1 = { s: dGetStart(cr[0]), e: dGetEnd(cr[0]) }; const p2 = { s: dGetStart(cr[1]), e: dGetEnd(cr[1]) }; return dSegmentsIntersect(p1.s, p1.e, p2.s, p2.e); } }
+    ]
+  },
+  flood: {
+    name: 'FLOOD',
+    description: '3 rutas al mismo lado a 3 profundidades. Inunda zone.',
+    rules: [
+      { id:'three_levels_strong', title:'3 niveles mismo lado', detail:'alto/medio/bajo en el lado fuerte',
+        validate: (P) => { const players = P||dGetActivePlayers(); const ss = dStrongSide(players); if (!ss) return false; const side = players.filter(p => dGetSide(dGetEnd(p)) === ss); if (side.length < 3) return false; const d = side.map(p => dGetEndDepth(p)); return d.some(x => x >= 12) && d.some(x => x >= 6 && x <= 11) && d.some(x => x >= 1 && x <= 5); } },
+      { id:'deep_route', title:'Ruta profunda (12y+) lado fuerte', detail:'GO/CORNER',
+        validate: (P) => { const players = P||dGetActivePlayers(); const ss = dStrongSide(players); return ss && players.some(p => dGetSide(dGetEnd(p)) === ss && dGetEndDepth(p) >= 12); } },
+      { id:'shallow_route', title:'Ruta corta (2-5y) lado fuerte', detail:'FLAT/SWING',
+        validate: (P) => { const players = P||dGetActivePlayers(); const ss = dStrongSide(players); return ss && players.some(p => { const d = dGetEndDepth(p); return dGetSide(dGetEnd(p)) === ss && d >= 1 && d <= 5; }); } }
+    ]
+  },
+  stick: {
+    name: 'STICK',
+    description: 'Stick slot + flat. Tu jugada de 3rd & medio.',
+    rules: [
+      { id:'stick_route', title:'STICK a 5-7y (medio)', detail:'Slot sube y abre',
+        validate: (P) => (P||dGetActivePlayers()).some(p => { const d = dGetEndDepth(p); return d >= 5 && d <= 7; }) },
+      { id:'flat_underneath', title:'FLAT por debajo (2-4y)', detail:'Centro o slot al flat',
+        validate: (P) => (P||dGetActivePlayers()).some(p => { const d = dGetEndDepth(p); return d >= 1 && d <= 4; }) },
+      { id:'vertical_clear', title:'Vertical clearing (12y+)', detail:'Aleja safety/CB',
+        validate: (P) => (P||dGetActivePlayers()).some(p => dGetEndDepth(p) >= 12) }
+    ]
+  },
+  drive: {
+    name: 'DRIVE',
+    description: 'Drag 2y + Dig 10y misma dirección. Pick natural vs man.',
+    rules: [
+      { id:'shallow_drag', title:'SHALLOW/DRAG a 1-3y cruzando', detail:'Horizontal paralelo a LOS',
+        validate: (P) => (P||dGetActivePlayers()).some(p => { const d = dGetEndDepth(p); if (d < 1 || d > 3) return false; const s = dGetStart(p), e = dGetEnd(p); return Math.abs(e.x - s.x) > 100; }) },
+      { id:'dig_behind', title:'DIG a 8-12y detrás del shallow', detail:'Misma dirección',
+        validate: (P) => (P||dGetActivePlayers()).some(p => { const d = dGetEndDepth(p); if (d < 8 || d > 12) return false; const s = dGetStart(p), e = dGetEnd(p); return Math.abs(e.x - s.x) > 100; }) },
+      { id:'same_direction', title:'Shallow y Dig misma dirección', detail:'Ambas al mismo lado',
+        validate: (P) => { const players = P||dGetActivePlayers(); const sh = players.find(p => { const d = dGetEndDepth(p); const s = dGetStart(p), e = dGetEnd(p); return d >= 1 && d <= 3 && Math.abs(e.x - s.x) > 100; }); const di = players.find(p => { const d = dGetEndDepth(p); const s = dGetStart(p), e = dGetEnd(p); return d >= 8 && d <= 12 && Math.abs(e.x - s.x) > 100; }); if (!sh || !di) return false; return Math.sign(dGetEnd(sh).x - dGetStart(sh).x) === Math.sign(dGetEnd(di).x - dGetStart(di).x); } }
+    ]
+  },
+  smash: {
+    name: 'SMASH',
+    description: 'Hitch 5y + Corner 12y+. Mata Cover 2.',
+    rules: [
+      { id:'hitch_route', title:'HITCH a 4-6y', detail:'Exterior se sienta',
+        validate: (P) => (P||dGetActivePlayers()).some(p => { const d = dGetEndDepth(p); return d >= 4 && d <= 6; }) },
+      { id:'corner_over', title:'CORNER a 12y+ por encima', detail:'Corte a esquina',
+        validate: (P) => (P||dGetActivePlayers()).some(p => dGetEndDepth(p) >= 12) },
+      { id:'same_side_high_low', title:'High-Low mismo lado', detail:'Hitch + Corner mismo lado',
+        validate: (P) => { const players = P||dGetActivePlayers(); const hi = players.filter(p => { const d = dGetEndDepth(p); return d >= 4 && d <= 6; }); const co = players.filter(p => dGetEndDepth(p) >= 12); for (const h of hi) for (const c of co) if (dGetSide(dGetEnd(h)) === dGetSide(dGetEnd(c))) return true; return false; } }
+    ]
+  },
+  ycross: {
+    name: 'Y-CROSS',
+    description: 'Cruce a 12y. MVP del Air Raid.',
+    rules: [
+      { id:'cross_route', title:'CROSS a 10-14y horizontal', detail:'Una ruta horizontal media-alta',
+        validate: (P) => (P||dGetActivePlayers()).some(p => { const d = dGetEndDepth(p); if (d < 10 || d > 14) return false; const s = dGetStart(p), e = dGetEnd(p); return Math.abs(e.x - s.x) > 200; }) },
+      { id:'cross_clearing', title:'POST/GO clearing del medio', detail:'Ruta vertical alta',
+        validate: (P) => (P||dGetActivePlayers()).some(p => dGetEndDepth(p) >= 15) },
+      { id:'shallow_underneath', title:'Ruta corta (FLAT/SWING)', detail:'Amenaza baja',
+        validate: (P) => (P||dGetActivePlayers()).some(p => { const d = dGetEndDepth(p); return d >= 1 && d <= 5; }) }
+    ]
+  },
+  verticals: {
+    name: 'VERT CHOICE',
+    description: '3 verticales + válvula. Adaptación de 4-Verts.',
+    rules: [
+      { id:'three_verticals', title:'3 verticales (15y+)', detail:'Tres receptores subiendo',
+        validate: (P) => (P||dGetActivePlayers()).filter(p => dGetEndDepth(p) >= 15).length >= 3 },
+      { id:'vertical_spread', title:'Verticales esparcidos', detail:'Diferentes carriles',
+        validate: (P) => { const v = (P||dGetActivePlayers()).filter(p => dGetEndDepth(p) >= 15).map(p => dGetEnd(p).x); if (v.length < 3) return false; return (Math.max(...v) - Math.min(...v)) > 250; } },
+      { id:'check_valve', title:'Válvula a 3-7y', detail:'Respaldo corto',
+        validate: (P) => (P||dGetActivePlayers()).some(p => { const d = dGetEndDepth(p); return d >= 3 && d <= 7; }) }
+    ]
+  }
+};
+
+// ==================== BACKSIDE ROLES (weak side, 1 player) ====================
+// Cada rol asume 1 jugador en el lado débil. La validación toma SOLO ese jugador (el más solo en el lado débil).
+const D_BACKSIDE = {
+  drag:  { name:'ARRASTRE (DRAG)', description:'Cruce corto 2-4y desde el lado débil.',
+           validate:(p) => { if (!p) return false; const d = dGetEndDepth(p); const s = dGetStart(p), e = dGetEnd(p); return d >= 1 && d <= 4 && Math.abs(e.x - s.x) > 120; } },
+  dig:   { name:'INTERIOR (DIG)', description:'Ruta interior a 9-11y. Ocupa al apoyador medio.',
+           validate:(p) => { if (!p) return false; const d = dGetEndDepth(p); const s = dGetStart(p), e = dGetEnd(p); return d >= 8 && d <= 12 && Math.abs(e.x - s.x) > 60; } },
+  hitch: { name:'PARO (HITCH)', description:'5y se sienta. Respaldo seguro.',
+           validate:(p) => { if (!p) return false; const d = dGetEndDepth(p); const s = dGetStart(p), e = dGetEnd(p); return d >= 4 && d <= 6 && Math.abs(e.x - s.x) < 50; } },
+  go:    { name:'VERTICAL (GO)', description:'Vertical 18y+. Aleja al safety.',
+           validate:(p) => { if (!p) return false; return dGetEndDepth(p) >= 15; } },
+  post:  { name:'POSTE (POST)', description:'15y+ interior. Ataca el medio profundo.',
+           validate:(p) => { if (!p) return false; const d = dGetEndDepth(p); const e = dGetEnd(p); return d >= 14 && e.x >= 200 && e.x <= 400; } },
+  slant: { name:'DIAGONAL (SLANT)', description:'5y a 45° hacia el medio. Caliente vs blitz.',
+           validate:(p) => { if (!p) return false; const d = dGetEndDepth(p); const s = dGetStart(p), e = dGetEnd(p); return d >= 4 && d <= 7 && Math.abs(e.x - s.x) > 30 && Math.abs(e.x - s.x) < 120; } },
+  out:   { name:'AFUERA (OUT)', description:'7-9y a la banda. Quita defensor corto.',
+           validate:(p) => { if (!p) return false; const d = dGetEndDepth(p); const s = dGetStart(p), e = dGetEnd(p); return d >= 7 && d <= 10 && Math.abs(e.x - s.x) > 60; } }
+};
+
+// ==================== COVERAGES ====================
+const D_COVERAGES = {
+  cover0: {
+    name: 'COBERTURA 0',
+    note: 'Blitz total · Marcaje personal · Sin ayuda profunda',
+    defenders: [
+      { type:'man', radius: 40, label:'M1' },
+      { type:'man', radius: 40, label:'M2' },
+      { type:'man', radius: 40, label:'M3' },
+      { type:'man', radius: 40, label:'M4' }
+    ]
+  },
+  cover1: {
+    name: 'COBERTURA 1',
+    note: '1 profundo + marcaje personal',
+    defenders: [
+      { type:'zone', x:300, y:90, radius: 95, label:'PROF' },
+      { type:'man',  radius: 40, label:'M1' },
+      { type:'man',  radius: 40, label:'M2' },
+      { type:'man',  radius: 40, label:'M3' },
+      { type:'man',  radius: 40, label:'M4' }
+    ]
+  },
+  cover2: {
+    name: 'COBERTURA 2',
+    note: '2 profundos · Esquinas cortas',
+    defenders: [
+      { type:'zone', x:150, y:100, radius:115, label:'P-I' },
+      { type:'zone', x:450, y:100, radius:115, label:'P-D' },
+      { type:'zone', x: 80, y:185, radius: 70, label:'E-I' },
+      { type:'zone', x:520, y:185, radius: 70, label:'E-D' },
+      { type:'zone', x:300, y:175, radius: 80, label:'APO' }
+    ]
+  },
+  cover3: {
+    name: 'COBERTURA 3',
+    note: '3 tercios profundos · 2 cortos',
+    defenders: [
+      { type:'zone', x:120, y:85, radius:105, label:'T-I' },
+      { type:'zone', x:300, y:70, radius:105, label:'PROF' },
+      { type:'zone', x:480, y:85, radius:105, label:'T-D' },
+      { type:'zone', x:200, y:180, radius: 80, label:'AP-I' },
+      { type:'zone', x:400, y:180, radius: 80, label:'AP-D' }
+    ]
+  },
+  cover4: {
+    name: 'COBERTURA 4',
+    note: 'Cuartos · 1 corto',
+    defenders: [
+      { type:'zone', x:120, y:75, radius: 90, label:'C1' },
+      { type:'zone', x:260, y:75, radius: 90, label:'C2' },
+      { type:'zone', x:340, y:75, radius: 90, label:'C3' },
+      { type:'zone', x:480, y:75, radius: 90, label:'C4' },
+      { type:'zone', x:300, y:190, radius: 75, label:'APO' }
+    ]
+  },
+  // COVER 2 INVERT (Roll Strong / Buzz): CB lado fuerte baja al flat amplio,
+  // CB lado débil rota a deep half (segundo safety), Safety cubre deep strong,
+  // LB cubre el corto del lado débil, 5to defensor blitzea.
+  // Defensores definidos asumiendo STRONG=RIGHT; se mirroran si strong=L.
+  cover2_invert: {
+    name: 'C2 INVERTIDA',
+    note: 'Rotación al fuerte · 2 profundos · 2 cortos · 1 blitz',
+    adaptStrong: true,
+    defenders: [
+      { type:'zone', x:480, y:90, radius:115, label:'SAF' },   // Safety profundo lado fuerte
+      { type:'zone', x:150, y:95, radius:115, label:'E-DB' },  // Esquina débil rotada a 2do safety
+      { type:'zone', x:400, y:175, radius:110, label:'E-FZ' }, // Esquina fuerte al corto amplio
+      { type:'zone', x:180, y:185, radius: 80, label:'APO' },  // Apoyador débil corto
+      { type:'blitz', label:'BLZ' }
+    ]
+  },
+  // CAJA: 5 defensores apretados cerca de la LDE (0-7y). Ahoga corto/intermedio.
+  // No hay cobertura profunda → vulnerable a verticales y rutas 12y+.
+  box: {
+    name: 'CAJA',
+    note: '5 en la caja · sin profundidad · vulnerable a verticales',
+    defenders: [
+      { type:'zone', x: 90, y:200, radius: 65, label:'EXT-I' },
+      { type:'zone', x:210, y:190, radius: 60, label:'INT-I' },
+      { type:'zone', x:300, y:180, radius: 65, label:'CENT' },
+      { type:'zone', x:390, y:190, radius: 60, label:'INT-D' },
+      { type:'zone', x:510, y:200, radius: 65, label:'EXT-D' }
+    ]
+  }
+};
+
+// Aplica mirror horizontal a los defensores si el lado fuerte detectado es L
+function dCoverageDefenders(cov) {
+  if (!cov.adaptStrong) return cov.defenders;
+  const ss = dStrongSide();
+  if (ss === 'L') {
+    return cov.defenders.map(d => d.type === 'blitz' ? d : ({ ...d, x: 600 - d.x }));
+  }
+  return cov.defenders;
+}
+
+// ==================== COVERAGE SIMULATION ====================
+// MODELO CON CAPACIDAD 1 POR DEFENSOR:
+// Cada defensor (man o zone) sólo puede comprometerse con UN receptor.
+// Si varios receptores caen en la misma zona, el defensor toma al más cercano (mayor amenaza),
+// los demás quedan libres → así se explota la vulnerabilidad del 2v1 (FLOOD, SNAG, SMASH).
+function simulateCoverage(covKey) {
+  const cov = D_COVERAGES[covKey];
+  const players = dActiveReceivers();
+  if (players.length === 0) return { open: [], covered: [], total: 0, coveredBy: {}, conflicts: [] };
+
+  const defenders = dCoverageDefenders(cov);
+  const manDefenders = defenders.filter(d => d.type === 'man');
+  const zoneDefenders = defenders.filter(d => d.type === 'zone');
+
+  // coveredBy[p] = { defender, reason } — quién marca a quién
+  const coveredBy = {};
+  // conflicts: zonas donde llegaron ≥2 receptores y el defensor tuvo que decidir
+  const conflicts = [];
+
+  // 1) MAN DEFENDERS: asignación 1-a-1 en orden de receptores.
+  //    Pierden si el receptor crea separación (cruce >180px o cambio deep↔short con +80px).
+  players.forEach((p, idx) => {
+    if (idx >= manDefenders.length) return;
+    const end = dGetEnd(p);
+    const start = dGetStart(p);
+    const horizMove = Math.abs(end.x - start.x);
+    const startDeep = start.y < 140;
+    const endDeep = end.y < 140;
+    const switchedDepth = startDeep !== endDeep;
+    const hasSeparation = horizMove > 180 || (switchedDepth && horizMove > 80);
+    if (!hasSeparation) {
+      coveredBy[p] = { defender: manDefenders[idx], reason: 'man stick' };
+    }
+  });
+
+  // 2) ZONE DEFENDERS: cada zona toma SOLO al receptor más cercano dentro de su radio.
+  //    Los demás receptores en la misma zona quedan "libres por flood".
+  //    Estrategia: greedy por distancia más corta entre todos los pares (defender, receiver).
+  const candidatePairs = [];
+  zoneDefenders.forEach(z => {
+    players.forEach(p => {
+      if (coveredBy[p]) return; // ya cubierto por man
+      const end = dGetEnd(p);
+      const dist = Math.hypot(end.x - z.x, end.y - z.y);
+      if (dist < z.radius) {
+        candidatePairs.push({ defender: z, player: p, distance: dist });
+      }
+    });
+  });
+  // ordenar por distancia ascendente (compromisos más obvios primero)
+  candidatePairs.sort((a, b) => a.distance - b.distance);
+
+  const committed = new Set();
+  // Agrupar candidatos por defensor para detectar conflictos antes de asignar
+  const byDefender = new Map();
+  candidatePairs.forEach(c => {
+    if (!byDefender.has(c.defender)) byDefender.set(c.defender, []);
+    byDefender.get(c.defender).push(c);
+  });
+  byDefender.forEach((arr, def) => {
+    if (arr.length >= 2) {
+      // Conflicto detectado: el defensor tiene 2+ receptores en su zona
+      conflicts.push({
+        defender: def,
+        receivers: arr.map(a => a.player),
+        chosen: arr[0].player, // toma al más cercano
+        freed: arr.slice(1).map(a => a.player)
+      });
+    }
+  });
+  // Asignar greedy
+  candidatePairs.forEach(pair => {
+    if (coveredBy[pair.player]) return;
+    if (committed.has(pair.defender)) return;
+    coveredBy[pair.player] = { defender: pair.defender, reason: 'zone' };
+    committed.add(pair.defender);
+  });
+
+  const open = players.filter(p => !coveredBy[p]);
+  const covered = players.filter(p => coveredBy[p]);
+  return { open, covered, total: players.length, coveredBy, conflicts };
+}
+
+// ==================== RENDERING ====================
+const dField = document.getElementById('d-field');
+
+function dRender() {
+  if (!dField) return;
+  const ns = 'http://www.w3.org/2000/svg';
+  dField.innerHTML = '';
+
+  // Defs (arrow markers)
+  const defs = document.createElementNS(ns, 'defs');
+  const arrowSet = { ...D_COLORS, QB: D_QB_COLOR };
+  Object.entries(arrowSet).forEach(([p, color]) => {
+    const m = document.createElementNS(ns, 'marker');
+    m.setAttribute('id', `d-arrow-${p}`);
+    m.setAttribute('viewBox', '0 0 10 10');
+    m.setAttribute('refX', '8'); m.setAttribute('refY', '5');
+    m.setAttribute('markerWidth', '5'); m.setAttribute('markerHeight', '5');
+    m.setAttribute('orient', 'auto-start-reverse');
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
+    path.setAttribute('fill', color);
+    m.appendChild(path); defs.appendChild(m);
+  });
+  dField.appendChild(defs);
+
+  // Background (campo 20y arriba del LOS + backfield extendido 10y abajo)
+  const bg = document.createElementNS(ns, 'rect');
+  bg.setAttribute('x', '20'); bg.setAttribute('y', '20');
+  bg.setAttribute('width', '560'); bg.setAttribute('height', '330');
+  bg.setAttribute('fill', '#0c1018');
+  bg.setAttribute('stroke', '#9aa3b8'); bg.setAttribute('stroke-width', '1.5');
+  dField.appendChild(bg);
+
+  // 5 ZONES (background fill, opcional)
+  if (dState.showZones) {
+    // Detectar tráfico: jugadores que terminan en la misma zona
+    const zoneCount = {};
+    dGetActivePlayers().forEach(p => {
+      const z = dPlayerEndZone(p);
+      if (z) zoneCount[z] = (zoneCount[z] || 0) + 1;
+    });
+
+    D_ZONES.forEach(z => {
+      const traffic = (zoneCount[z.id] || 0) >= 2;
+      const r = document.createElementNS(ns, 'rect');
+      r.setAttribute('x', z.x); r.setAttribute('y', z.y);
+      r.setAttribute('width', z.w); r.setAttribute('height', z.h);
+      r.setAttribute('fill', z.color);
+      r.setAttribute('fill-opacity', traffic ? '0.20' : '0.08');
+      r.setAttribute('stroke', traffic ? '#ff3b6b' : z.color);
+      r.setAttribute('stroke-width', traffic ? '2.5' : '1.2');
+      r.setAttribute('stroke-dasharray', '5 4');
+      r.setAttribute('stroke-opacity', traffic ? '1' : '0.5');
+      dField.appendChild(r);
+
+      // Etiqueta zona
+      const tNum = document.createElementNS(ns, 'text');
+      tNum.setAttribute('x', z.x + z.w/2); tNum.setAttribute('y', z.y + 32);
+      tNum.setAttribute('fill', '#fff'); tNum.setAttribute('fill-opacity', '0.4');
+      tNum.setAttribute('font-size', '22'); tNum.setAttribute('font-weight', '900');
+      tNum.setAttribute('text-anchor', 'middle');
+      tNum.setAttribute('font-family', 'Helvetica Neue, Arial Black, sans-serif');
+      tNum.textContent = String(z.id).padStart(2, '0');
+      dField.appendChild(tNum);
+
+      const tName = document.createElementNS(ns, 'text');
+      tName.setAttribute('x', z.x + z.w/2); tName.setAttribute('y', z.y + 50);
+      tName.setAttribute('fill', '#cbd5e1'); tName.setAttribute('fill-opacity', '0.5');
+      tName.setAttribute('font-size', '10'); tName.setAttribute('text-anchor', 'middle');
+      tName.setAttribute('font-family', 'SF Mono, Menlo, Consolas, monospace');
+      tName.setAttribute('letter-spacing', '2');
+      tName.textContent = z.name;
+      dField.appendChild(tName);
+    });
+  }
+
+  // Yard lines (campo de 20y arriba + backfield 10y abajo)
+  [
+    { y:  40, dashed: false, label: '20y' },
+    { y:  90, dashed: true,  label: '15y' },
+    { y: 140, dashed: false, label: '10y' },
+    { y: 170, dashed: true,  label: '7y'  },
+    { y: 190, dashed: true,  label: '5y'  },
+    { y: 210, dashed: true,  label: '3y'  },
+    { y: 290, dashed: true,  label: '-5y' },
+    { y: 340, dashed: true,  label: '-10y' }
+  ].forEach(yl => {
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', '20'); line.setAttribute('y1', yl.y);
+    line.setAttribute('x2', '580'); line.setAttribute('y2', yl.y);
+    line.setAttribute('stroke', '#1f2735');
+    line.setAttribute('stroke-width', yl.dashed ? '1' : '1.5');
+    if (yl.dashed) line.setAttribute('stroke-dasharray', '3 5');
+    dField.appendChild(line);
+    const txt = document.createElementNS(ns, 'text');
+    txt.setAttribute('x', '14'); txt.setAttribute('y', yl.y + 3);
+    txt.setAttribute('fill', '#5d6478'); txt.setAttribute('font-size', '9');
+    txt.setAttribute('text-anchor', 'end');
+    txt.setAttribute('font-family', 'SF Mono, Menlo, Consolas, monospace');
+    txt.textContent = yl.label;
+    dField.appendChild(txt);
+  });
+
+  // LOS
+  const los = document.createElementNS(ns, 'line');
+  los.setAttribute('x1', '20'); los.setAttribute('y1', D_FIELD.losY);
+  los.setAttribute('x2', '580'); los.setAttribute('y2', D_FIELD.losY);
+  los.setAttribute('stroke', '#00e5ff'); los.setAttribute('stroke-width', '2');
+  dField.appendChild(los);
+
+  // Center
+  const center = document.createElementNS(ns, 'line');
+  center.setAttribute('x1', '300'); center.setAttribute('y1', '20');
+  center.setAttribute('x2', '300'); center.setAttribute('y2', '350');
+  center.setAttribute('stroke', '#1f2735'); center.setAttribute('stroke-width', '0.5');
+  center.setAttribute('stroke-dasharray', '2 6');
+  dField.appendChild(center);
+
+  // Flecha de SNAP (si el snap no va al QB, ej. Wildcat/snapH)
+  const snapTarget = dSnapTo();
+  if (snapTarget !== 'QB') {
+    const cPos = dGetStart('C');
+    const tPos = dGetStart(snapTarget);
+    const snap = document.createElementNS(ns, 'path');
+    const mx = (cPos.x + tPos.x) / 2 + 12;
+    const my = (cPos.y + tPos.y) / 2;
+    snap.setAttribute('d', `M ${cPos.x} ${cPos.y + 10} Q ${mx} ${my} ${tPos.x - 4} ${tPos.y - 8}`);
+    snap.setAttribute('fill', 'none');
+    snap.setAttribute('stroke', '#fbbf24'); snap.setAttribute('stroke-width', '2.5');
+    snap.setAttribute('stroke-dasharray', '4 3');
+    snap.setAttribute('opacity', '0.9');
+    snap.setAttribute('marker-end', `url(#d-arrow-C)`);
+    dField.appendChild(snap);
+    const lbl = document.createElementNS(ns, 'text');
+    lbl.setAttribute('x', mx + 8); lbl.setAttribute('y', my + 3);
+    lbl.setAttribute('fill', '#fbbf24'); lbl.setAttribute('font-size', '8');
+    lbl.setAttribute('font-weight', '900'); lbl.setAttribute('text-anchor', 'start');
+    lbl.setAttribute('font-family', 'SF Mono, Menlo, Consolas, monospace');
+    lbl.setAttribute('letter-spacing', '2');
+    lbl.textContent = 'SNAP';
+    dField.appendChild(lbl);
+  }
+
+  // Defensa (opcional)
+  if (dState.showDefense) {
+    const cov = D_COVERAGES[dState.selectedCoverage];
+    const defenders = dCoverageDefenders(cov);
+    const players = dGetActivePlayers();
+    const manDefenders = defenders.filter(d => d.type === 'man');
+    // dibujar zonas defensivas
+    defenders.filter(d => d.type === 'zone').forEach(d => {
+      const c = document.createElementNS(ns, 'circle');
+      c.setAttribute('cx', d.x); c.setAttribute('cy', d.y); c.setAttribute('r', d.radius);
+      c.setAttribute('fill', '#3b82f6'); c.setAttribute('fill-opacity', '0.10');
+      c.setAttribute('stroke', '#3b82f6'); c.setAttribute('stroke-width', '1.5');
+      c.setAttribute('stroke-dasharray', '4 3');
+      dField.appendChild(c);
+      // marker (triángulo apuntando hacia el LOS = abajo)
+      const tri = document.createElementNS(ns, 'polygon');
+      tri.setAttribute('points', `${d.x-11},${d.y-7} ${d.x+11},${d.y-7} ${d.x},${d.y+10}`);
+      tri.setAttribute('fill', '#3b82f6'); tri.setAttribute('stroke', '#000'); tri.setAttribute('stroke-width', '1.5');
+      tri.setAttribute('stroke-linejoin', 'round');
+      dField.appendChild(tri);
+      const lbl = document.createElementNS(ns, 'text');
+      lbl.setAttribute('x', d.x); lbl.setAttribute('y', d.y + 2);
+      lbl.setAttribute('fill', '#fff'); lbl.setAttribute('font-size', '8');
+      lbl.setAttribute('font-weight', '900'); lbl.setAttribute('text-anchor', 'middle');
+      lbl.setAttribute('font-family', 'Helvetica Neue, Arial Black, sans-serif');
+      lbl.textContent = d.label;
+      dField.appendChild(lbl);
+    });
+    // dibujar mans (cada uno marca a un receptor en orden, como triángulo rojo)
+    players.forEach((p, idx) => {
+      if (idx >= manDefenders.length) return;
+      const startPos = dGetStart(p);
+      const dx = startPos.x, dy = startPos.y - 45;
+      const tri = document.createElementNS(ns, 'polygon');
+      tri.setAttribute('points', `${dx-9},${dy-6} ${dx+9},${dy-6} ${dx},${dy+8}`);
+      tri.setAttribute('fill', '#ef4444'); tri.setAttribute('stroke', '#000'); tri.setAttribute('stroke-width', '1.5');
+      tri.setAttribute('stroke-linejoin', 'round');
+      dField.appendChild(tri);
+      const lbl = document.createElementNS(ns, 'text');
+      lbl.setAttribute('x', dx); lbl.setAttribute('y', dy + 1);
+      lbl.setAttribute('fill', '#fff'); lbl.setAttribute('font-size', '8');
+      lbl.setAttribute('font-weight', '900'); lbl.setAttribute('text-anchor', 'middle');
+      lbl.setAttribute('font-family', 'Helvetica Neue, Arial Black, sans-serif');
+      lbl.textContent = 'M';
+      dField.appendChild(lbl);
+    });
+    // Blitzer (si la cobertura lo trae) — flecha apuntando al QB
+    const blitzers = defenders.filter(d => d.type === 'blitz');
+    if (blitzers.length > 0) {
+      const qbPos = dGetQB();
+      blitzers.forEach((b, i) => {
+        const bx = 300 + (i === 0 ? 0 : (i % 2 === 0 ? -60 : 60));
+        const by = qbPos.y - 80;
+        const tri = document.createElementNS(ns, 'polygon');
+        tri.setAttribute('points', `${bx-10},${by-6} ${bx+10},${by-6} ${bx},${by+9}`);
+        tri.setAttribute('fill', '#f59e0b'); tri.setAttribute('stroke', '#000'); tri.setAttribute('stroke-width', '1.5');
+        tri.setAttribute('stroke-linejoin', 'round');
+        dField.appendChild(tri);
+        const lbl = document.createElementNS(ns, 'text');
+        lbl.setAttribute('x', bx); lbl.setAttribute('y', by + 1);
+        lbl.setAttribute('fill', '#000'); lbl.setAttribute('font-size', '7');
+        lbl.setAttribute('font-weight', '900'); lbl.setAttribute('text-anchor', 'middle');
+        lbl.setAttribute('font-family', 'Helvetica Neue, Arial Black, sans-serif');
+        lbl.textContent = b.label || 'BLZ';
+        dField.appendChild(lbl);
+        // Flecha al QB
+        const arrow = document.createElementNS(ns, 'line');
+        arrow.setAttribute('x1', bx); arrow.setAttribute('y1', by + 12);
+        arrow.setAttribute('x2', qbPos.x); arrow.setAttribute('y2', qbPos.y - 14);
+        arrow.setAttribute('stroke', '#f59e0b'); arrow.setAttribute('stroke-width', '1.5');
+        arrow.setAttribute('stroke-dasharray', '3 3');
+        arrow.setAttribute('opacity', '0.6');
+        dField.appendChild(arrow);
+      });
+    }
+
+    // Líneas de COMPROMISO: defensor → receptor cubierto (lectura del 2v1)
+    const sim = simulateCoverage(dState.selectedCoverage);
+    Object.entries(sim.coveredBy).forEach(([p, info]) => {
+      const def = info.defender;
+      if (!def || def.x === undefined) return; // man defenders no tienen x fija
+      const end = dGetEnd(p);
+      if (!end) return;
+      const line = document.createElementNS(ns, 'line');
+      line.setAttribute('x1', def.x); line.setAttribute('y1', def.y);
+      line.setAttribute('x2', end.x); line.setAttribute('y2', end.y);
+      line.setAttribute('stroke', '#ff3b6b');
+      line.setAttribute('stroke-width', '1.3');
+      line.setAttribute('stroke-dasharray', '2 3');
+      line.setAttribute('opacity', '0.55');
+      dField.appendChild(line);
+    });
+    // CONFLICTOS: defensor con 2+ receptores en zona → resaltar al "liberado"
+    sim.conflicts.forEach(cf => {
+      cf.freed.forEach(fp => {
+        const end = dGetEnd(fp);
+        if (!end) return;
+        // anillo amarillo pulsante alrededor del receptor liberado
+        const ring = document.createElementNS(ns, 'circle');
+        ring.setAttribute('cx', end.x); ring.setAttribute('cy', end.y);
+        ring.setAttribute('r', 22); ring.setAttribute('fill', 'none');
+        ring.setAttribute('stroke', '#fbbf24'); ring.setAttribute('stroke-width', '2');
+        ring.setAttribute('stroke-dasharray', '4 3');
+        ring.setAttribute('opacity', '0.85');
+        dField.appendChild(ring);
+      });
+    });
+  }
+
+  // Routes (incluye QB cuando doubleQB está activo)
+  const routePlayers = dState.doubleQB ? ['X','H','Y','C','QB'] : ['X','H','Y','C'];
+  routePlayers.forEach(p => {
+    const route = dState.routes[p];
+    if (!route || route.length === 0) return;
+    const start = dGetStart(p);
+    const allPoints = [start, ...route];
+    let d = `M ${start.x} ${start.y}`;
+    for (let i = 1; i < allPoints.length; i++) d += ` L ${allPoints[i].x} ${allPoints[i].y}`;
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', d); path.setAttribute('fill', 'none');
+    const isPasser = dIsSecondPasser(p);
+    const isPrimary = p === dSnapTo();
+    const color = (p === 'QB') ? D_QB_COLOR : D_COLORS[p];
+    path.setAttribute('stroke', color); path.setAttribute('stroke-width', '3');
+    path.setAttribute('stroke-linecap', 'round'); path.setAttribute('stroke-linejoin', 'round');
+    if (isPasser || isPrimary) path.setAttribute('stroke-dasharray', '6 4'); // movimiento pre-throw = línea punteada
+    if (p === 'QB') path.setAttribute('marker-end', `url(#d-arrow-QB)`);
+    else path.setAttribute('marker-end', `url(#d-arrow-${p})`);
+    dField.appendChild(path);
+
+    // Lateral pitch (del receptor del snap → segundo pasador) en doble QB
+    if (isPasser && dState.doubleQB && route.length > 0) {
+      // Si el primer pasador se movió, el pitch sale del final de su movimiento; si no, de su posición inicial
+      const primaryEnd = dGetEnd(dSnapTo());
+      const primaryStart = primaryEnd || dGetStart(dSnapTo());
+      const dropPt = route[0];
+      const pitch = document.createElementNS(ns, 'path');
+      const mx = (primaryStart.x + dropPt.x) / 2;
+      const my = Math.max(primaryStart.y, dropPt.y) + 15;
+      pitch.setAttribute('d', `M ${primaryStart.x} ${primaryStart.y - 12} Q ${mx} ${my} ${dropPt.x} ${dropPt.y}`);
+      pitch.setAttribute('fill', 'none');
+      pitch.setAttribute('stroke', '#fbbf24'); pitch.setAttribute('stroke-width', '2');
+      pitch.setAttribute('stroke-dasharray', '2 4');
+      pitch.setAttribute('opacity', '0.85');
+      dField.appendChild(pitch);
+      const pLbl = document.createElementNS(ns, 'text');
+      pLbl.setAttribute('x', mx); pLbl.setAttribute('y', my + 4);
+      pLbl.setAttribute('fill', '#fbbf24'); pLbl.setAttribute('font-size', '8');
+      pLbl.setAttribute('font-weight', '900'); pLbl.setAttribute('text-anchor', 'middle');
+      pLbl.setAttribute('font-family', 'SF Mono, Menlo, Consolas, monospace');
+      pLbl.setAttribute('letter-spacing', '2');
+      pLbl.textContent = 'PITCH';
+      dField.appendChild(pLbl);
+    }
+    // intermediate dots
+    route.forEach((pt, i) => {
+      if (i < route.length - 1) {
+        const c = document.createElementNS(ns, 'circle');
+        c.setAttribute('cx', pt.x); c.setAttribute('cy', pt.y); c.setAttribute('r', 2.5);
+        c.setAttribute('fill', D_COLORS[p]); c.setAttribute('opacity', '0.5');
+        dField.appendChild(c);
+      }
+    });
+
+    // Highlight open vs covered (vs cover seleccionada)
+    if (dState.showDefense) {
+      const sim = simulateCoverage(dState.selectedCoverage);
+      const end = dGetEnd(p);
+      if (end) {
+        const ring = document.createElementNS(ns, 'circle');
+        ring.setAttribute('cx', end.x); ring.setAttribute('cy', end.y);
+        ring.setAttribute('r', 14); ring.setAttribute('fill', 'none');
+        const isOpen = sim.open.includes(p);
+        ring.setAttribute('stroke', isOpen ? '#27e08a' : '#ff3b6b');
+        ring.setAttribute('stroke-width', 2.5);
+        ring.setAttribute('stroke-dasharray', isOpen ? '0' : '3 3');
+        dField.appendChild(ring);
+      }
+    }
+  });
+
+  // Players (clickeables para seleccionar quién diseña ruta)
+  ['X','H','Y','C'].forEach(p => {
+    const pos = dGetStart(p);
+    const isSel = dState.selectedPlayer === p;
+    const isPasser = dIsSecondPasser(p);
+    const g = document.createElementNS(ns, 'g');
+    g.style.cursor = 'pointer';
+    g.setAttribute('data-player-marker', p);
+    const c = document.createElementNS(ns, 'circle');
+    c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y);
+    c.setAttribute('r', isSel ? 17 : 15);
+    c.setAttribute('fill', D_COLORS[p]);
+    c.setAttribute('stroke', isSel ? '#fff' : (isPasser ? '#fbbf24' : '#000'));
+    c.setAttribute('stroke-width', isSel ? 3 : (isPasser ? 3 : 2));
+    g.appendChild(c);
+    // Badge "P" (pasador secundario)
+    if (isPasser) {
+      const bg = document.createElementNS(ns, 'circle');
+      bg.setAttribute('cx', pos.x + 13); bg.setAttribute('cy', pos.y - 13);
+      bg.setAttribute('r', 7); bg.setAttribute('fill', '#fbbf24');
+      bg.setAttribute('stroke', '#000'); bg.setAttribute('stroke-width', '1.5');
+      g.appendChild(bg);
+      const bt = document.createElementNS(ns, 'text');
+      bt.setAttribute('x', pos.x + 13); bt.setAttribute('y', pos.y - 10);
+      bt.setAttribute('fill', '#000'); bt.setAttribute('font-size', '9');
+      bt.setAttribute('font-weight', '900'); bt.setAttribute('text-anchor', 'middle');
+      bt.setAttribute('font-family', 'Helvetica Neue, Arial Black, sans-serif');
+      bt.style.pointerEvents = 'none';
+      bt.textContent = 'P';
+      g.appendChild(bt);
+    }
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', pos.x); t.setAttribute('y', pos.y + 5);
+    t.setAttribute('fill', '#000'); t.setAttribute('font-size', '14');
+    t.setAttribute('font-weight', '900'); t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('font-family', 'Helvetica Neue, Arial Black, sans-serif');
+    t.style.pointerEvents = 'none';
+    t.textContent = p;
+    g.appendChild(t);
+    g.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      dState.selectedPlayer = p;
+      document.querySelectorAll('[data-d-player]').forEach(b => b.classList.toggle('active', b.dataset.dPlayer === p));
+      dRender(); dUpdatePlayersList(); dUpdateHint();
+    });
+    dField.appendChild(g);
+  });
+
+  // QB — clickeable como receptor cuando doubleQB está activo
+  const qb = dGetQB();
+  const qbSel = dState.doubleQB && dState.selectedPlayer === 'QB';
+  const qbG = document.createElementNS(ns, 'g');
+  if (dState.doubleQB) qbG.style.cursor = 'pointer';
+  const qbR = document.createElementNS(ns, 'rect');
+  qbR.setAttribute('x', qb.x - 14); qbR.setAttribute('y', qb.y - 11);
+  qbR.setAttribute('width', 28); qbR.setAttribute('height', 22); qbR.setAttribute('rx', 3);
+  qbR.setAttribute('fill', D_QB_COLOR);
+  qbR.setAttribute('stroke', qbSel ? '#fff' : '#000');
+  qbR.setAttribute('stroke-width', qbSel ? 3 : 2);
+  qbG.appendChild(qbR);
+  const qbT = document.createElementNS(ns, 'text');
+  qbT.setAttribute('x', qb.x); qbT.setAttribute('y', qb.y + 5);
+  qbT.setAttribute('fill', '#fff'); qbT.setAttribute('font-size', 12);
+  qbT.setAttribute('font-weight', 900); qbT.setAttribute('text-anchor', 'middle');
+  qbT.setAttribute('font-family', 'Helvetica Neue, Arial Black, sans-serif');
+  qbT.style.pointerEvents = 'none';
+  qbT.textContent = 'QB';
+  qbG.appendChild(qbT);
+  if (dState.doubleQB) {
+    qbG.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      dState.selectedPlayer = 'QB';
+      document.querySelectorAll('[data-d-player]').forEach(b => b.classList.toggle('active', b.dataset.dPlayer === 'QB'));
+      dRender(); dUpdatePlayersList(); dUpdateHint();
+    });
+  }
+  dField.appendChild(qbG);
+}
+
+// ==================== INTERACTIONS ====================
+function dGetSvgPoint(e) {
+  const rect = dField.getBoundingClientRect();
+  const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+  return { x: (cx / rect.width) * D_FIELD.w, y: (cy / rect.height) * D_FIELD.h };
+}
+function dPushHistory() {
+  dState.history.push({
+    routes: JSON.parse(JSON.stringify(dState.routes)),
+    mirror: dState.mirror,
+    snapTo: dState.snapTo,
+    secondPasser: dState.secondPasser
+  });
+  if (dState.history.length > 50) dState.history.shift();
+}
+dField.addEventListener('click', (e) => {
+  const pt = dGetSvgPoint(e);
+  // Primer pasador (receptor del snap) y pasador 2° pueden dibujar movimiento DETRÁS de la LDE
+  const sp = dState.selectedPlayer;
+  const canDropBack = dIsSecondPasser(sp) || sp === dSnapTo();
+  const maxY = canDropBack ? D_FIELD.losY + 105 : D_FIELD.losY - 5;
+  if (pt.y > maxY) return;
+  if (pt.x < 20 || pt.x > 580 || pt.y < 20) return;
+  dPushHistory();
+  dState.routes[dState.selectedPlayer].push(pt);
+  dRender(); dValidateAll();
+});
+
+// ==================== UI WIRING ====================
+function dPopulateSelects() {
+  const strong = document.getElementById('d-strong');
+  strong.innerHTML = '';
+  Object.entries(D_CONCEPTS).forEach(([key, c]) => {
+    const opt = document.createElement('option');
+    opt.value = key; opt.textContent = c.name;
+    if (key === dState.concepts.strong) opt.selected = true;
+    strong.appendChild(opt);
+  });
+  const weak = document.getElementById('d-weak');
+  weak.innerHTML = '';
+  const noneOpt = document.createElement('option');
+  noneOpt.value = ''; noneOpt.textContent = '— NINGUNO (single-side) —';
+  weak.appendChild(noneOpt);
+  Object.entries(D_BACKSIDE).forEach(([key, c]) => {
+    const opt = document.createElement('option');
+    opt.value = key; opt.textContent = c.name;
+    if (key === dState.concepts.weak) opt.selected = true;
+    weak.appendChild(opt);
+  });
+  // También permitir conceptos completos en el lado débil (mirror)
+  Object.entries(D_CONCEPTS).forEach(([key, c]) => {
+    const opt = document.createElement('option');
+    opt.value = 'concept:' + key; opt.textContent = `[mirror] ${c.name}`;
+    weak.appendChild(opt);
+  });
+}
+
+function dPopulateCovList() {
+  const list = document.getElementById('d-cov-list');
+  list.innerHTML = '';
+  Object.entries(D_COVERAGES).forEach(([key, c]) => {
+    const row = document.createElement('div');
+    row.className = 'd-cov-row' + (key === dState.selectedCoverage ? ' selected' : '');
+    row.dataset.cov = key;
+    row.innerHTML = `
+      <div class="d-cov-name">${c.name}</div>
+      <div class="d-cov-icon empty" data-icon>·</div>
+      <div class="d-cov-detail" data-detail>${c.note}</div>
+      <div class="d-cov-open" data-open></div>
+    `;
+    row.addEventListener('click', () => {
+      dState.selectedCoverage = key;
+      dPopulateCovList();
+      dRender();
+    });
+    list.appendChild(row);
+  });
+}
+
+function dUpdateConceptInfo() {
+  const s = D_CONCEPTS[dState.concepts.strong];
+  let html = `<b>${s.name} (lado fuerte)</b>${s.description}`;
+  if (dState.concepts.weak) {
+    let w;
+    if (dState.concepts.weak.startsWith('concept:')) {
+      w = D_CONCEPTS[dState.concepts.weak.slice(8)];
+      html += `<br><br><b>${w.name} (lado débil · mirror)</b>${w.description}`;
+    } else {
+      w = D_BACKSIDE[dState.concepts.weak];
+      html += `<br><br><b>${w.name} (lado débil)</b>${w.description}`;
+    }
+  }
+  document.getElementById('d-concept-info').innerHTML = html;
+}
+
+function dUpdatePlayersList() {
+  const list = document.getElementById('d-players-list');
+  list.innerHTML = '';
+  const players = dState.doubleQB ? ['X','H','Y','C','QB'] : ['X','H','Y','C'];
+  players.forEach(p => {
+    const route = dState.routes[p] || [];
+    const pts = route.length;
+    const isPasser = dIsSecondPasser(p);
+    const lastY = pts > 0 ? dYToYards(route[route.length - 1].y) : null;
+    const zone = pts > 0 ? D_ZONES.find(z => z.id === dPlayerEndZone(p)) : null;
+    const zoneName = zone ? zone.short : (pts > 0 ? (isPasser ? 'pocket' : 'fuera') : '—');
+    let desc;
+    if (pts === 0) desc = isPasser ? 'sin dropback' : (p === 'QB' ? 'sin ruta receptor' : 'sin ruta');
+    else if (isPasser) desc = `dropback · <span class="d-player-zone">pocket</span>`;
+    else desc = `${lastY}y · <span class="d-player-zone">${zoneName}</span>`;
+    const color = (p === 'QB') ? D_QB_COLOR : D_COLORS[p];
+    const roleTag = isPasser ? ' <span class="d-check-side" style="border-color:#fbbf24;color:#fbbf24">PASADOR 2°</span>' : (p === 'QB' ? ' <span class="d-check-side" style="border-color:#27e08a;color:#27e08a">RECEPTOR</span>' : '');
+    const row = document.createElement('div');
+    row.className = 'd-player-row' + (dState.selectedPlayer === p ? ' selected' : '');
+    row.innerHTML = `
+      <div class="d-player-dot" style="background:${color};color:${p==='QB'?'#fff':'#000'}">${p}</div>
+      <div class="d-player-info"><b>${p}</b> · ${desc}${roleTag}</div>
+      ${pts > 0 ? `<button class="d-player-clear">✕</button>` : ''}
+    `;
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('.d-player-clear')) { dClearPlayer(p); return; }
+      dState.selectedPlayer = p;
+      document.querySelectorAll('[data-d-player]').forEach(b => b.classList.toggle('active', b.dataset.dPlayer === p));
+      dRender(); dUpdatePlayersList(); dUpdateHint();
+    });
+    list.appendChild(row);
+  });
+}
+
+function dUpdateHint() {
+  const hint = document.getElementById('d-hint');
+  const sp = dState.selectedPlayer;
+  if (dIsSecondPasser(sp)) {
+    hint.textContent = `Jugador ${sp} · DROPBACK · clickea DETRÁS de la LDE para el pocket`;
+  } else if (sp === dSnapTo()) {
+    hint.textContent = `${sp} recibe el snap · puede moverse antes de lanzar (delante o detrás de la LDE)`;
+  } else if (sp === 'QB') {
+    hint.textContent = `QB libre como receptor · clickea delante de la LDE`;
+  } else {
+    hint.textContent = `Jugador ${sp} · Click en el campo para agregar puntos de ruta`;
+  }
+}
+
+function dClearPlayer(p) {
+  dPushHistory();
+  dState.routes[p] = [];
+  dRender(); dValidateAll();
+}
+
+// ==================== VALIDATION (concept rules per side) ====================
+function dValidateAll() {
+  dRender();
+  dUpdatePlayersList();
+  dRenderChecklist();
+  dRenderSimulator();
+  dRenderComboWarn();
+  dRenderNarrative();
+  dPersistAuto();
+}
+
+// ==================== NARRATIVA · EXPLICACIÓN DE LA JUGADA ====================
+function dRenderNarrative() {
+  const el = document.getElementById('d-narrative');
+  if (!el) return;
+  const receivers = dActiveReceivers();
+  if (receivers.length === 0) {
+    el.innerHTML = `<h5>Análisis</h5><p>Dibuja al menos un receptor delante de la LDE para que la herramienta narre la jugada y sus vulnerabilidades.</p>`;
+    return;
+  }
+
+  const strong = D_CONCEPTS[dState.concepts.strong];
+  const weakKey = dState.concepts.weak;
+  let weakLabel = null;
+  if (weakKey) {
+    if (weakKey.startsWith('concept:')) weakLabel = D_CONCEPTS[weakKey.slice(8)].name + ' (mirror)';
+    else weakLabel = D_BACKSIDE[weakKey].name;
+  }
+  const ss = dStrongSide();
+  const ssLabel = ss === 'L' ? 'izquierda' : (ss === 'R' ? 'derecha' : 'balanceado');
+
+  // Recorrer covers para narrar
+  const wins = [];
+  const losses = [];
+  const conflictNotes = [];
+  Object.entries(D_COVERAGES).forEach(([key, cov]) => {
+    const sim = simulateCoverage(key);
+    if (sim.open.length >= 1) {
+      const openLabels = sim.open.join(', ');
+      let why = '';
+      if (sim.conflicts && sim.conflicts.length > 0) {
+        const cf = sim.conflicts[0];
+        why = ` (${cf.defender.label || 'zone'} forzado al 2v1)`;
+      } else if (sim.open.length === sim.total) {
+        why = ' (defensa fuera de rango)';
+      }
+      wins.push(`<span class="nc">${cov.name}</span> abre a <span class="nb">${openLabels}</span>${why}`);
+      if (sim.conflicts && sim.conflicts.length > 0) {
+        sim.conflicts.forEach(cf => {
+          conflictNotes.push(`<span class="nc">${cov.name}</span>: <span class="ny">${cf.defender.label}</span> tiene a <strong>${cf.receivers.join(' y ')}</strong> en su zona → toma a ${cf.chosen}, deja libre a ${cf.freed.join(', ')}.`);
+        });
+      }
+    } else {
+      losses.push(`<span class="nc">${cov.name}</span> ahoga la jugada`);
+    }
+  });
+
+  let html = `<h5>Análisis de la jugada</h5>`;
+  // Descripción del concepto
+  html += `<p><strong style="color:var(--accent-3)">${strong.name}</strong>`;
+  if (weakLabel) html += ` + <strong style="color:var(--accent-2)">${weakLabel}</strong> backside`;
+  html += ` · lado fuerte <strong>${ssLabel}</strong>. ${strong.description}</p>`;
+
+  // Vulnerabilidades / fortalezas
+  if (wins.length > 0) {
+    html += `<p><strong style="color:var(--accent-5)">Donde abre:</strong> ${wins.join(' · ')}.</p>`;
+  }
+  if (conflictNotes.length > 0) {
+    html += `<p><strong style="color:var(--accent-3)">Cómo se explota la zona:</strong> ${conflictNotes.join(' ')}</p>`;
+  }
+  if (losses.length > 0) {
+    html += `<p><strong style="color:var(--accent-2)">Donde la matan:</strong> ${losses.join(' · ')}. <em>Ajusta el spacing o añade un crosser para forzar conflictos extra.</em></p>`;
+  } else if (wins.length === Object.keys(D_COVERAGES).length) {
+    html += `<p class="nb">Jugada universal: vence las 7 coberturas conocidas. Llámala con confianza.</p>`;
+  }
+  el.innerHTML = html;
+}
+
+function dRenderChecklist() {
+  const checklist = document.getElementById('d-checklist');
+  checklist.innerHTML = '';
+  // Sólo cuentan los receptores reales (delante de la LDE)
+  const activeAll = dActiveReceivers();
+  if (activeAll.length < 2) {
+    const li = document.createElement('li');
+    li.className = 'd-check-item';
+    li.innerHTML = `<div class="d-check-icon pending">·</div><div class="d-check-text"><b>Necesitas al menos 2 rutas</b><span>dibujar para validar conceptos</span></div>`;
+    checklist.appendChild(li);
+    return;
+  }
+
+  const ss = dStrongSide(activeAll);
+  const ws = ss === 'L' ? 'R' : (ss === 'R' ? 'L' : null);
+  const strongPlayers = ss ? activeAll.filter(p => dGetSide(dGetEnd(p)) === ss) : activeAll;
+  const weakPlayers = ws ? activeAll.filter(p => dGetSide(dGetEnd(p)) === ws) : [];
+
+  // Strong concept rules
+  const strongConcept = D_CONCEPTS[dState.concepts.strong];
+  strongConcept.rules.forEach(rule => {
+    const passed = rule.validate(strongPlayers);
+    const li = document.createElement('li');
+    li.className = 'd-check-item';
+    li.innerHTML = `
+      <div class="d-check-icon ${passed ? 'ok' : 'fail'}">${passed ? '✓' : '✕'}</div>
+      <div class="d-check-text"><b>${rule.title} <span class="d-check-side">FUERTE</span></b><span>${rule.detail}</span></div>
+    `;
+    checklist.appendChild(li);
+  });
+
+  // Weak side
+  if (dState.concepts.weak) {
+    if (dState.concepts.weak.startsWith('concept:')) {
+      const w = D_CONCEPTS[dState.concepts.weak.slice(8)];
+      // mirror: ejecutar reglas sobre weakPlayers
+      w.rules.forEach(rule => {
+        const passed = rule.validate(weakPlayers.length ? weakPlayers : []);
+        const li = document.createElement('li');
+        li.className = 'd-check-item';
+        li.innerHTML = `
+          <div class="d-check-icon ${passed ? 'ok' : 'fail'}">${passed ? '✓' : '✕'}</div>
+          <div class="d-check-text"><b>${rule.title} <span class="d-check-side" style="border-color:#ff3b6b;color:#ff3b6b">DÉBIL</span></b><span>${rule.detail}</span></div>
+        `;
+        checklist.appendChild(li);
+      });
+    } else {
+      const role = D_BACKSIDE[dState.concepts.weak];
+      const wp = weakPlayers[0] || null;
+      const passed = role.validate(wp);
+      const li = document.createElement('li');
+      li.className = 'd-check-item';
+      li.innerHTML = `
+        <div class="d-check-icon ${passed ? 'ok' : 'fail'}">${passed ? '✓' : '✕'}</div>
+        <div class="d-check-text"><b>Rol ${role.name} en backside <span class="d-check-side" style="border-color:#ff3b6b;color:#ff3b6b">DÉBIL</span></b><span>${role.description}</span></div>
+      `;
+      checklist.appendChild(li);
+    }
+  }
+
+  // Reglas combinadas (toda la jugada)
+  // R1: cobertura de niveles (low+mid+high)
+  const depths = activeAll.map(p => dGetEndDepth(p));
+  const hasLevels = depths.some(d => d >= 1 && d <= 5) && depths.some(d => d >= 6 && d <= 11) && depths.some(d => d >= 12);
+  const li1 = document.createElement('li');
+  li1.className = 'd-check-item';
+  li1.innerHTML = `<div class="d-check-icon ${hasLevels ? 'ok' : 'fail'}">${hasLevels ? '✓' : '✕'}</div><div class="d-check-text"><b>3 niveles cubiertos <span class="d-check-side" style="border-color:#ffd23f;color:#ffd23f">JUGADA</span></b><span>LOW (1-5) + MID (6-11) + HIGH (12+)</span></div>`;
+  checklist.appendChild(li1);
+
+  // R2: no tráfico (≤1 receptor por zona)
+  const zoneCount = {};
+  activeAll.forEach(p => { const z = dPlayerEndZone(p); if (z) zoneCount[z] = (zoneCount[z] || 0) + 1; });
+  const noTraffic = Object.values(zoneCount).every(v => v <= 1);
+  const li2 = document.createElement('li');
+  li2.className = 'd-check-item';
+  li2.innerHTML = `<div class="d-check-icon ${noTraffic ? 'ok' : 'fail'}">${noTraffic ? '✓' : '✕'}</div><div class="d-check-text"><b>Sin tráfico de zonas <span class="d-check-side" style="border-color:#ffd23f;color:#ffd23f">JUGADA</span></b><span>Cada zona ocupada por ≤1 receptor</span></div>`;
+  checklist.appendChild(li2);
+}
+
+function dRenderSimulator() {
+  // Sólo cuentan los receptores reales delante de la LDE
+  const receivers = dActiveReceivers();
+  let passCount = 0;
+  const total = Object.keys(D_COVERAGES).length;
+
+  Object.entries(D_COVERAGES).forEach(([key, cov]) => {
+    const sim = simulateCoverage(key);
+    const row = document.querySelector(`.d-cov-row[data-cov="${key}"]`);
+    if (!row) return;
+    const icon = row.querySelector('[data-icon]');
+    const detail = row.querySelector('[data-detail]');
+    const open = row.querySelector('[data-open]');
+
+    if (receivers.length === 0) {
+      icon.className = 'd-cov-icon empty'; icon.textContent = '·';
+      detail.textContent = cov.note;
+      open.innerHTML = '';
+      return;
+    }
+    const ok = sim.open.length >= 1;
+    if (ok) passCount++;
+    icon.className = 'd-cov-icon ' + (ok ? 'ok' : 'bad');
+    icon.textContent = ok ? '✓' : '✕';
+    // Detallar la razón: si hay conflicto 2v1, mencionar al defensor en problemas
+    let detailText;
+    if (ok) {
+      const baseStr = `${sim.open.length} libre${sim.open.length>1?'s':''}`;
+      if (sim.conflicts && sim.conflicts.length > 0) {
+        const conflictLabels = sim.conflicts.map(cf => cf.defender.label || 'zone').join('·');
+        detailText = `${baseStr} · 2v1 sobre ${conflictLabels}`;
+      } else {
+        detailText = baseStr;
+      }
+    } else {
+      detailText = 'CUBIERTOS · ajustar';
+    }
+    detail.textContent = detailText;
+    open.innerHTML = sim.open.map(p => `<span style="background:${(p==='QB')?D_QB_COLOR:D_COLORS[p]};color:${(p==='QB')?'#fff':'#000'}">${p}</span>`).join('');
+  });
+
+  const verdict = document.getElementById('d-verdict');
+  const num = document.getElementById('d-verdict-num');
+  const lbl = document.getElementById('d-verdict-label');
+
+  if (receivers.length === 0) {
+    verdict.className = 'd-verdict empty';
+    num.textContent = '0/' + total;
+    lbl.textContent = 'SIN RECEPTORES DELANTE DE LDE';
+  } else if (passCount === total) {
+    verdict.className = 'd-verdict good';
+    num.textContent = passCount + '/' + total;
+    lbl.textContent = 'JUGADA UNIVERSAL ✓';
+  } else {
+    verdict.className = 'd-verdict bad';
+    num.textContent = passCount + '/' + total;
+    lbl.textContent = 'INCOMPLETA · COBERTURA FALLA';
+  }
+}
+
+function dRenderComboWarn() {
+  const c = document.getElementById('d-combo-warn');
+  c.innerHTML = '';
+  if (!dState.concepts.weak) return;
+  // Detectar mirror
+  if (dState.concepts.weak === 'concept:' + dState.concepts.strong) {
+    const w = document.createElement('div');
+    w.className = 'd-warn bad';
+    w.innerHTML = '⚠ ESPEJO · Vulnerable a Cobertura 2 — considera mezclar';
+    c.appendChild(w);
+  } else if (dState.concepts.weak.startsWith('concept:')) {
+    const w = document.createElement('div');
+    w.className = 'd-warn ok';
+    w.innerHTML = '✓ DOBLE CONCEPTO · Defensa dividida';
+    c.appendChild(w);
+  } else {
+    const w = document.createElement('div');
+    w.className = 'd-warn ok';
+    w.innerHTML = '✓ CONCEPTO + LADO DÉBIL · Estructura clásica';
+    c.appendChild(w);
+  }
+}
+
+// ==================== PERSISTENCE ====================
+const D_STORAGE_KEY = 'jags_designer_state_v1';
+const D_SAVED_KEY = 'jags_designer_saved_v1';
+
+function dPersistAuto() {
+  try {
+    localStorage.setItem(D_STORAGE_KEY, JSON.stringify({
+      formation: dState.formation,
+      routes: dState.routes,
+      concepts: dState.concepts,
+      showZones: dState.showZones,
+      selectedCoverage: dState.selectedCoverage,
+      doubleQB: dState.doubleQB,
+      secondPasser: dState.secondPasser,
+      mirror: dState.mirror,
+      snapTo: dState.snapTo
+    }));
+  } catch (_) {}
+}
+function dLoadAuto() {
+  try {
+    const raw = localStorage.getItem(D_STORAGE_KEY);
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    if (s.formation) dState.formation = s.formation;
+    if (s.routes) {
+      dState.routes = { X:[], H:[], Y:[], C:[], QB:[] };
+      Object.assign(dState.routes, s.routes);
+    }
+    if (s.concepts) dState.concepts = s.concepts;
+    if (typeof s.showZones === 'boolean') dState.showZones = s.showZones;
+    if (s.selectedCoverage) dState.selectedCoverage = s.selectedCoverage;
+    if (typeof s.doubleQB === 'boolean') dState.doubleQB = s.doubleQB;
+    if (s.secondPasser) dState.secondPasser = s.secondPasser;
+    if (typeof s.mirror === 'boolean') dState.mirror = s.mirror;
+    if (s.snapTo) dState.snapTo = s.snapTo;
+  } catch (_) {}
+}
+function dGetSaved() {
+  try { return JSON.parse(localStorage.getItem(D_SAVED_KEY) || '[]'); } catch (_) { return []; }
+}
+function dSetSaved(arr) {
+  try { localStorage.setItem(D_SAVED_KEY, JSON.stringify(arr)); } catch (_) {}
+}
+function dSavePlay() {
+  const nameInput = document.getElementById('d-save-name');
+  const name = (nameInput.value || '').trim() || 'Sin nombre';
+  const arr = dGetSaved();
+  arr.unshift({
+    id: Date.now(),
+    name,
+    formation: dState.formation,
+    routes: JSON.parse(JSON.stringify(dState.routes)),
+    concepts: { ...dState.concepts },
+    mirror: dState.mirror,
+    snapTo: dState.snapTo,
+    doubleQB: dState.doubleQB,
+    secondPasser: dState.secondPasser,
+    ts: new Date().toISOString()
+  });
+  // límite 30 jugadas
+  while (arr.length > 30) arr.pop();
+  dSetSaved(arr);
+  nameInput.value = '';
+  dRenderSavedList();
+}
+function dLoadPlay(id) {
+  const arr = dGetSaved();
+  const item = arr.find(x => x.id === id);
+  if (!item) return;
+  dState.formation = item.formation;
+  dState.routes = JSON.parse(JSON.stringify(item.routes));
+  if (!dState.routes.QB) dState.routes.QB = [];
+  dState.concepts = { ...item.concepts };
+  if (typeof item.mirror === 'boolean') dState.mirror = item.mirror;
+  if (item.snapTo) dState.snapTo = item.snapTo;
+  if (typeof item.doubleQB === 'boolean') dState.doubleQB = item.doubleQB;
+  if (item.secondPasser) dState.secondPasser = item.secondPasser;
+  // sync UI completo
+  document.querySelectorAll('[data-d-formation]').forEach(b => b.classList.toggle('active', b.dataset.dFormation === dState.formation));
+  document.getElementById('d-strong').value = dState.concepts.strong;
+  document.getElementById('d-weak').value = dState.concepts.weak || '';
+  document.getElementById('d-mirror-btn').classList.toggle('active', dState.mirror);
+  document.querySelectorAll('[data-d-snap]').forEach(b => b.classList.toggle('active', b.dataset.dSnap === dState.snapTo));
+  document.querySelectorAll('[data-d-passer]').forEach(b => b.classList.toggle('active', b.dataset.dPasser === dState.secondPasser));
+  document.getElementById('d-toggle-2qb').classList.toggle('active', dState.doubleQB);
+  document.getElementById('d-2qb-row').style.display = dState.doubleQB ? 'block' : 'none';
+  document.getElementById('d-btn-qb').style.display = dState.doubleQB ? 'flex' : 'none';
+  dRefreshPasserAvailability();
+  dUpdateConceptInfo();
+  dValidateAll();
+}
+function dDeletePlay(id) {
+  dSetSaved(dGetSaved().filter(x => x.id !== id));
+  dRenderSavedList();
+}
+function dRenderSavedList() {
+  const list = document.getElementById('d-saved-list');
+  list.innerHTML = '';
+  dGetSaved().forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'd-saved-item';
+    const concepts = item.concepts.strong + (item.concepts.weak ? ' + ' + item.concepts.weak.replace('concept:', '') : '');
+    row.innerHTML = `<span><b>${item.name}</b>${concepts}</span><button class="d-player-clear" data-del="${item.id}">✕</button>`;
+    row.querySelector('span').addEventListener('click', () => dLoadPlay(item.id));
+    row.querySelector('[data-del]').addEventListener('click', (e) => { e.stopPropagation(); dDeletePlay(item.id); });
+    list.appendChild(row);
+  });
+}
+
+// ==================== EVENT WIRING ====================
+document.querySelectorAll('[data-d-player]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-d-player]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    dState.selectedPlayer = btn.dataset.dPlayer;
+    dRender(); dUpdatePlayersList(); dUpdateHint();
+  });
+});
+document.querySelectorAll('[data-d-formation]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-d-formation]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    dState.formation = btn.dataset.dFormation;
+    dValidateAll();
+  });
+});
+document.getElementById('d-mirror-btn').addEventListener('click', (e) => {
+  dFlipRoutes();
+  e.currentTarget.classList.toggle('active', dState.mirror);
+  dValidateAll();
+});
+document.getElementById('d-strong').addEventListener('change', (e) => {
+  dState.concepts.strong = e.target.value;
+  dUpdateConceptInfo();
+  dValidateAll();
+});
+document.getElementById('d-weak').addEventListener('change', (e) => {
+  dState.concepts.weak = e.target.value || null;
+  dUpdateConceptInfo();
+  dValidateAll();
+});
+document.getElementById('d-toggle-zones').addEventListener('click', (e) => {
+  dState.showZones = !dState.showZones;
+  e.currentTarget.classList.toggle('active', dState.showZones);
+  dRender(); dPersistAuto();
+});
+document.getElementById('d-toggle-defense').addEventListener('click', (e) => {
+  dState.showDefense = !dState.showDefense;
+  e.currentTarget.classList.toggle('active', dState.showDefense);
+  dRender();
+});
+document.getElementById('d-toggle-2qb').addEventListener('click', (e) => {
+  dState.doubleQB = !dState.doubleQB;
+  e.currentTarget.classList.toggle('active', dState.doubleQB);
+  document.getElementById('d-2qb-row').style.display = dState.doubleQB ? 'block' : 'none';
+  document.getElementById('d-btn-qb').style.display = dState.doubleQB ? 'flex' : 'none';
+  // Si el jugador seleccionado es QB y se apaga doubleQB → vuelve a X
+  if (!dState.doubleQB && dState.selectedPlayer === 'QB') {
+    dState.selectedPlayer = 'X';
+    document.querySelectorAll('[data-d-player]').forEach(b => b.classList.toggle('active', b.dataset.dPlayer === 'X'));
+  }
+  dValidateAll(); dUpdateHint(); dPersistAuto();
+});
+document.querySelectorAll('[data-d-passer]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-d-passer]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    // Limpia la ruta del nuevo pasador (porque cambia de rol)
+    dPushHistory();
+    dState.secondPasser = btn.dataset.dPasser;
+    dValidateAll(); dPersistAuto();
+  });
+});
+document.querySelectorAll('[data-d-snap]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-d-snap]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    dState.snapTo = btn.dataset.dSnap;
+    // Si el pasador 2° era el mismo que el snap recipient, reasignar a uno válido
+    if (dState.secondPasser === dState.snapTo) {
+      const fallback = ['C','H','X','Y','QB'].find(p => p !== dState.snapTo);
+      dState.secondPasser = fallback;
+      document.querySelectorAll('[data-d-passer]').forEach(b => b.classList.toggle('active', b.dataset.dPasser === fallback));
+    }
+    dRefreshPasserAvailability();
+    dValidateAll(); dPersistAuto();
+  });
+});
+
+// Deshabilita visualmente el botón de pasador 2° que coincide con el snap recipient
+function dRefreshPasserAvailability() {
+  document.querySelectorAll('[data-d-passer]').forEach(b => {
+    const conflict = b.dataset.dPasser === dState.snapTo;
+    b.disabled = conflict;
+    b.style.opacity = conflict ? '0.3' : '';
+    b.style.cursor = conflict ? 'not-allowed' : '';
+    b.title = conflict ? 'No puede ser pasador 2° porque ya recibe el snap' : '';
+  });
+}
+document.getElementById('d-undo-btn').addEventListener('click', () => {
+  if (dState.history.length === 0) return;
+  const snap = dState.history.pop();
+  // Compat: snapshots viejos eran sólo routes
+  if (snap && snap.routes) {
+    dState.routes = snap.routes;
+    if (typeof snap.mirror === 'boolean') dState.mirror = snap.mirror;
+    if (snap.snapTo) dState.snapTo = snap.snapTo;
+    if (snap.secondPasser) dState.secondPasser = snap.secondPasser;
+  } else {
+    dState.routes = snap;
+  }
+  // Sync UI tras undo
+  document.getElementById('d-mirror-btn').classList.toggle('active', dState.mirror);
+  document.querySelectorAll('[data-d-snap]').forEach(b => b.classList.toggle('active', b.dataset.dSnap === dState.snapTo));
+  document.querySelectorAll('[data-d-passer]').forEach(b => b.classList.toggle('active', b.dataset.dPasser === dState.secondPasser));
+  dRefreshPasserAvailability();
+  dValidateAll();
+});
+document.getElementById('d-clear-btn').addEventListener('click', () => {
+  dPushHistory();
+  dState.routes = { X: [], H: [], Y: [], C: [], QB: [] };
+  dValidateAll();
+});
+document.getElementById('d-save-btn').addEventListener('click', dSavePlay);
+document.getElementById('d-save-name').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') dSavePlay();
+});
+// EXPORT: descarga toda la jugada actual + librería como JSON
+document.getElementById('d-export-btn').addEventListener('click', () => {
+  const payload = {
+    version: 1,
+    exported_at: new Date().toISOString(),
+    current: {
+      formation: dState.formation,
+      routes: dState.routes,
+      concepts: dState.concepts,
+      mirror: dState.mirror,
+      snapTo: dState.snapTo,
+      doubleQB: dState.doubleQB,
+      secondPasser: dState.secondPasser,
+      selectedCoverage: dState.selectedCoverage
+    },
+    saved: dGetSaved()
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `jags-playbook-${Date.now()}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+});
+// IMPORT: carga JSON desde archivo
+document.getElementById('d-import-btn').addEventListener('click', () => {
+  document.getElementById('d-import-file').click();
+});
+document.getElementById('d-import-file').addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.current) {
+        dPushHistory();
+        if (data.current.formation) dState.formation = data.current.formation;
+        if (data.current.routes) {
+          dState.routes = { X:[], H:[], Y:[], C:[], QB:[] };
+          Object.assign(dState.routes, data.current.routes);
+        }
+        if (data.current.concepts) dState.concepts = data.current.concepts;
+        if (typeof data.current.mirror === 'boolean') dState.mirror = data.current.mirror;
+        if (data.current.snapTo) dState.snapTo = data.current.snapTo;
+        if (typeof data.current.doubleQB === 'boolean') dState.doubleQB = data.current.doubleQB;
+        if (data.current.secondPasser) dState.secondPasser = data.current.secondPasser;
+        if (data.current.selectedCoverage) dState.selectedCoverage = data.current.selectedCoverage;
+      }
+      if (Array.isArray(data.saved)) {
+        // merge: añade las jugadas importadas a la librería existente
+        const existing = dGetSaved();
+        const existingIds = new Set(existing.map(x => x.id));
+        const merged = existing.concat(data.saved.filter(x => !existingIds.has(x.id)));
+        dSetSaved(merged.slice(0, 30));
+      }
+      // sync UI completo
+      document.querySelectorAll('[data-d-formation]').forEach(b => b.classList.toggle('active', b.dataset.dFormation === dState.formation));
+      document.getElementById('d-strong').value = dState.concepts.strong;
+      document.getElementById('d-weak').value = dState.concepts.weak || '';
+      document.getElementById('d-mirror-btn').classList.toggle('active', dState.mirror);
+      document.querySelectorAll('[data-d-snap]').forEach(b => b.classList.toggle('active', b.dataset.dSnap === dState.snapTo));
+      document.querySelectorAll('[data-d-passer]').forEach(b => b.classList.toggle('active', b.dataset.dPasser === dState.secondPasser));
+      document.getElementById('d-toggle-2qb').classList.toggle('active', dState.doubleQB);
+      document.getElementById('d-2qb-row').style.display = dState.doubleQB ? 'block' : 'none';
+      document.getElementById('d-btn-qb').style.display = dState.doubleQB ? 'flex' : 'none';
+      dRefreshPasserAvailability();
+      dPopulateCovList();
+      dUpdateConceptInfo();
+      dRenderSavedList();
+      dValidateAll();
+    } catch (err) {
+      alert('Error al importar JSON: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = ''; // permite reimportar el mismo archivo
+});
+
+// ==================== BOOT ====================
+dLoadAuto();
+// Garantizar slot QB en routes
+if (!dState.routes.QB) dState.routes.QB = [];
+// Sync UI con estado cargado
+document.querySelectorAll('[data-d-formation]').forEach(b => b.classList.toggle('active', b.dataset.dFormation === dState.formation));
+document.getElementById('d-toggle-zones').classList.toggle('active', dState.showZones);
+document.getElementById('d-toggle-2qb').classList.toggle('active', dState.doubleQB);
+document.getElementById('d-2qb-row').style.display = dState.doubleQB ? 'block' : 'none';
+document.getElementById('d-btn-qb').style.display = dState.doubleQB ? 'flex' : 'none';
+document.getElementById('d-mirror-btn').classList.toggle('active', dState.mirror);
+document.querySelectorAll('[data-d-passer]').forEach(b => b.classList.toggle('active', b.dataset.dPasser === dState.secondPasser));
+document.querySelectorAll('[data-d-snap]').forEach(b => b.classList.toggle('active', b.dataset.dSnap === dState.snapTo));
+dRefreshPasserAvailability();
+dPopulateSelects();
+dPopulateCovList();
+dUpdateConceptInfo();
+dUpdateHint();
+dRenderSavedList();
+dRender();
+dValidateAll();
+</script>
+</body>
+</html>
