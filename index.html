@@ -838,6 +838,28 @@ function dClipPolyline(pts, frac) {
 // Fracciones de la línea de tiempo de animación: 0–35% motion, 35–100% rutas
 function dMotionFrac() { return Math.max(0, Math.min(1, dState.anim.progress / 0.35)); }
 function dRouteFrac()  { return Math.max(0, Math.min(1, (dState.anim.progress - 0.35) / 0.65)); }
+// Posición de un jugador AHORA durante la animación (motion → ruta)
+function dPlayerAnimPos(p) {
+  const start = dGetStart(p);
+  if (!dState.anim.running) return start;
+  const motion = dState.motions[p] || [];
+  const route = dState.routes[p] || [];
+  const rf = dRouteFrac();
+  if (rf <= 0) {
+    // fase de motion pre-snap
+    if (motion.length > 0) {
+      const mp = dClipPolyline([start, ...motion], dMotionFrac());
+      return mp[mp.length - 1];
+    }
+    return start;
+  }
+  // fase de ruta post-snap
+  if (route.length > 0) {
+    const rp = dClipPolyline([dRouteStart(p), ...route], rf);
+    return rp[rp.length - 1];
+  }
+  return dRouteStart(p);
+}
 
 // ==================== HELPERS ====================
 function dYToYards(y) { return Math.max(0, Math.round((D_FIELD.losY - y) / 10)); }
@@ -1446,18 +1468,35 @@ function dRender() {
     const defenders = dCoverageDefenders(cov, covKey);
     const players = dGetActivePlayers();
     const manDefenders = defenders.filter(d => d.type === 'man');
-    // dibujar zonas defensivas (arrastrables: puedes reubicar cada defensor)
+    const sim = simulateCoverage(covKey);
+    const rf = dRouteFrac();
+    // mapa: etiqueta de defensor de zona → receptor que cubre (para reacción animada)
+    const zoneTarget = {};
+    Object.entries(sim.coveredBy).forEach(([pl, info]) => {
+      if (info.defender && info.defender.label && info.reason === 'zone') zoneTarget[info.defender.label] = pl;
+    });
+    // posición de un receptor AHORA (animada o estática)
+    const recPos = (p) => animOn ? dPlayerAnimPos(p) : (dGetEnd(p) || dGetStart(p));
+
+    // ZONA: el defensor reacciona y se desplaza hacia el receptor que entra a su zona
     defenders.forEach((d, defIdx) => {
       if (d.type !== 'zone') return;
+      let cx = d.x, cy = d.y;
+      const tgt = zoneTarget[d.label];
+      if (animOn && tgt && rf > 0) {
+        const r = recPos(tgt);
+        const f = 0.62 * rf;                 // qué tanto se "amarra" al receptor
+        cx = d.x + (r.x - d.x) * f;
+        cy = d.y + (r.y - d.y) * f;
+      }
       const c = document.createElementNS(ns, 'circle');
-      c.setAttribute('cx', d.x); c.setAttribute('cy', d.y); c.setAttribute('r', d.radius);
+      c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', d.radius);
       c.setAttribute('fill', '#3b82f6'); c.setAttribute('fill-opacity', '0.10');
       c.setAttribute('stroke', '#3b82f6'); c.setAttribute('stroke-width', '1.5');
       c.setAttribute('stroke-dasharray', '4 3');
       dField.appendChild(c);
-      // marker (triángulo apuntando hacia el LOS = abajo)
       const tri = document.createElementNS(ns, 'polygon');
-      tri.setAttribute('points', `${d.x-11},${d.y-7} ${d.x+11},${d.y-7} ${d.x},${d.y+10}`);
+      tri.setAttribute('points', `${cx-11},${cy-7} ${cx+11},${cy-7} ${cx},${cy+10}`);
       tri.setAttribute('fill', '#3b82f6'); tri.setAttribute('stroke', '#000'); tri.setAttribute('stroke-width', '1.5');
       tri.setAttribute('stroke-linejoin', 'round');
       if (!animOn) {
@@ -1468,7 +1507,7 @@ function dRender() {
       }
       dField.appendChild(tri);
       const lbl = document.createElementNS(ns, 'text');
-      lbl.setAttribute('x', d.x); lbl.setAttribute('y', d.y + 2);
+      lbl.setAttribute('x', cx); lbl.setAttribute('y', cy + 2);
       lbl.setAttribute('fill', '#fff'); lbl.setAttribute('font-size', '8');
       lbl.setAttribute('font-weight', '900'); lbl.setAttribute('text-anchor', 'middle');
       lbl.setAttribute('font-family', 'Helvetica Neue, Arial Black, sans-serif');
@@ -1476,11 +1515,17 @@ function dRender() {
       lbl.textContent = d.label;
       dField.appendChild(lbl);
     });
-    // dibujar mans (cada uno marca a un receptor en orden, como triángulo rojo)
+    // MAN: cada defensor sigue a su receptor — durante la animación lo persigue
     players.forEach((p, idx) => {
       if (idx >= manDefenders.length) return;
-      const startPos = dGetStart(p);
-      const dx = startPos.x, dy = startPos.y - 45;
+      let dx, dy;
+      if (animOn) {
+        const r = recPos(p);
+        dx = r.x; dy = r.y - 22;  // pegado al receptor, ligeramente por encima
+      } else {
+        const startPos = dGetStart(p);
+        dx = startPos.x; dy = startPos.y - 45;
+      }
       const tri = document.createElementNS(ns, 'polygon');
       tri.setAttribute('points', `${dx-9},${dy-6} ${dx+9},${dy-6} ${dx},${dy+8}`);
       tri.setAttribute('fill', '#ef4444'); tri.setAttribute('stroke', '#000'); tri.setAttribute('stroke-width', '1.5');
@@ -1494,13 +1539,18 @@ function dRender() {
       lbl.textContent = 'M';
       dField.appendChild(lbl);
     });
-    // Blitzer (si la cobertura lo trae) — flecha apuntando al QB
+    // BLITZ: rushea al QB — durante la animación avanza hacia él
     const blitzers = defenders.filter(d => d.type === 'blitz');
     if (blitzers.length > 0) {
       const qbPos = dGetQB();
       blitzers.forEach((b, i) => {
-        const bx = 300 + (i === 0 ? 0 : (i % 2 === 0 ? -60 : 60));
-        const by = qbPos.y - 80;
+        const bx0 = 300 + (i === 0 ? 0 : (i % 2 === 0 ? -60 : 60));
+        const by0 = qbPos.y - 80;
+        let bx = bx0, by = by0;
+        if (animOn && rf > 0) {
+          bx = bx0 + (qbPos.x - bx0) * rf;
+          by = by0 + ((qbPos.y - 14) - by0) * rf;
+        }
         const tri = document.createElementNS(ns, 'polygon');
         tri.setAttribute('points', `${bx-10},${by-6} ${bx+10},${by-6} ${bx},${by+9}`);
         tri.setAttribute('fill', '#f59e0b'); tri.setAttribute('stroke', '#000'); tri.setAttribute('stroke-width', '1.5');
@@ -1513,7 +1563,6 @@ function dRender() {
         lbl.setAttribute('font-family', 'Helvetica Neue, Arial Black, sans-serif');
         lbl.textContent = b.label || 'BLZ';
         dField.appendChild(lbl);
-        // Flecha al QB
         const arrow = document.createElementNS(ns, 'line');
         arrow.setAttribute('x1', bx); arrow.setAttribute('y1', by + 12);
         arrow.setAttribute('x2', qbPos.x); arrow.setAttribute('y2', qbPos.y - 14);
@@ -1525,11 +1574,10 @@ function dRender() {
     }
 
     // Líneas de COMPROMISO: defensor → receptor cubierto (lectura del 2v1)
-    const sim = simulateCoverage(dState.selectedCoverage);
     Object.entries(sim.coveredBy).forEach(([p, info]) => {
       const def = info.defender;
-      if (!def || def.x === undefined) return; // man defenders no tienen x fija
-      const end = dGetEnd(p);
+      if (!def || def.x === undefined) return;
+      const end = animOn ? recPos(p) : dGetEnd(p);
       if (!end) return;
       const line = document.createElementNS(ns, 'line');
       line.setAttribute('x1', def.x); line.setAttribute('y1', def.y);
@@ -1543,9 +1591,8 @@ function dRender() {
     // CONFLICTOS: defensor con 2+ receptores en zona → resaltar al "liberado"
     sim.conflicts.forEach(cf => {
       cf.freed.forEach(fp => {
-        const end = dGetEnd(fp);
+        const end = animOn ? recPos(fp) : dGetEnd(fp);
         if (!end) return;
-        // anillo amarillo pulsante alrededor del receptor liberado
         const ring = document.createElementNS(ns, 'circle');
         ring.setAttribute('cx', end.x); ring.setAttribute('cy', end.y);
         ring.setAttribute('r', 22); ring.setAttribute('fill', 'none');
@@ -1677,7 +1724,7 @@ function dRender() {
 
   // Players (arrastrables para reubicar · tap para seleccionar quién diseña ruta)
   ['X','H','Y','C'].forEach(p => {
-    const pos = dGetStart(p);
+    const pos = animOn ? dPlayerAnimPos(p) : dGetStart(p);
     const isSel = dState.selectedPlayer === p;
     const isPasser = dIsSecondPasser(p);
     const g = document.createElementNS(ns, 'g');
@@ -1721,7 +1768,7 @@ function dRender() {
   });
 
   // QB — arrastrable siempre · seleccionable cuando es receptor
-  const qb = dGetQB();
+  const qb = animOn ? dPlayerAnimPos('QB') : dGetQB();
   const qbReceiver = dQBIsReceiver();
   const qbSel = qbReceiver && dState.selectedPlayer === 'QB';
   const qbG = document.createElementNS(ns, 'g');
