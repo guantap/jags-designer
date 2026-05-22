@@ -581,6 +581,8 @@ const D_FORMATIONS = {
 // Quién recibe el snap. Independiente de la formación: el C siempre snapea,
 // pero puede mandarlo atrás al QB o lateralmente a otro elegible (Wildcat).
 function dSnapTo() { return dState.snapTo || 'QB'; }
+// El QB es receptor (puede correr ruta/motion) si NO recibe el snap, o en modo doble QB.
+function dQBIsReceiver() { return dState.doubleQB || dSnapTo() !== 'QB'; }
 
 // 5 zonas: 3 cortas (LDE→10y, y:140-240) + 2 profundas (10y+, y:30-140)
 const D_ZONES = [
@@ -726,6 +728,32 @@ function dActiveReceivers() {
 }
 function dGetEndDepth(p) { const e = dGetEnd(p); return e ? dYToYards(e.y) : null; }
 function dDistance(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+// Largo total de la ruta de un jugador (desde el inicio post-motion hasta el final)
+function dRouteLength(p) {
+  const r = dState.routes[p];
+  if (!r || r.length === 0) return 0;
+  let prev = dRouteStart(p), len = 0;
+  for (const pt of r) { len += Math.hypot(pt.x - prev.x, pt.y - prev.y); prev = pt; }
+  return len;
+}
+// Probabilidad de que un defensor de ZONA se "amarre" a un receptor (0..1, -1 si fuera de rango).
+// Defensores profundos cargan al receptor más vertical; los underneath agarran al que se sienta en su zona.
+function dZoneThreat(z, p) {
+  const end = dGetEnd(p);
+  if (!end) return -1;
+  const dist = Math.hypot(end.x - z.x, end.y - z.y);
+  if (dist >= z.radius) return -1;
+  const penetration = 1 - dist / z.radius;          // qué tan dentro de la zona termina
+  const isDeep = z.y < 150;                          // defensor profundo vs underneath
+  if (isDeep) {
+    // el profundo carga la amenaza más vertical (ruta más profunda manda)
+    const depthNorm = Math.min(1, (dGetEndDepth(p) || 0) / 20);
+    return depthNorm * 0.62 + penetration * 0.38;
+  }
+  // el underneath agarra al que SE SIENTA en su zona: ruta más corta/comprometida pesa más
+  const shortNorm = 1 - Math.min(1, dRouteLength(p) / 220);
+  return penetration * 0.58 + shortNorm * 0.42;
+}
 
 function dZoneOf(point) {
   if (!point) return null;
@@ -1024,25 +1052,24 @@ function simulateCoverage(covKey) {
     }
   });
 
-  // 2) ZONE DEFENDERS: cada zona toma SOLO al receptor más cercano dentro de su radio.
-  //    Los demás receptores en la misma zona quedan "libres por flood".
-  //    Estrategia: greedy por distancia más corta entre todos los pares (defender, receiver).
+  // 2) ZONE DEFENDERS: cada zona se "amarra" al receptor con mayor PROBABILIDAD de amenaza,
+  //    no sólo al más cercano. Se pondera el largo/profundidad de la ruta (dZoneThreat):
+  //    los profundos cargan verticales, los underneath agarran al que se sienta en su zona.
   const candidatePairs = [];
   zoneDefenders.forEach(z => {
     players.forEach(p => {
       if (coveredBy[p]) return; // ya cubierto por man
-      const end = dGetEnd(p);
-      const dist = Math.hypot(end.x - z.x, end.y - z.y);
-      if (dist < z.radius) {
-        candidatePairs.push({ defender: z, player: p, distance: dist });
+      const threat = dZoneThreat(z, p);
+      if (threat >= 0) {
+        candidatePairs.push({ defender: z, player: p, threat });
       }
     });
   });
-  // ordenar por distancia ascendente (compromisos más obvios primero)
-  candidatePairs.sort((a, b) => a.distance - b.distance);
+  // ordenar por amenaza DESCENDENTE (el compromiso más probable se asigna primero)
+  candidatePairs.sort((a, b) => b.threat - a.threat);
 
   const committed = new Set();
-  // Agrupar candidatos por defensor para detectar conflictos antes de asignar
+  // Agrupar candidatos por defensor para detectar conflictos
   const byDefender = new Map();
   candidatePairs.forEach(c => {
     if (!byDefender.has(c.defender)) byDefender.set(c.defender, []);
@@ -1050,16 +1077,17 @@ function simulateCoverage(covKey) {
   });
   byDefender.forEach((arr, def) => {
     if (arr.length >= 2) {
-      // Conflicto detectado: el defensor tiene 2+ receptores en su zona
+      // Conflicto: el defensor tiene 2+ receptores en su zona → toma al de mayor amenaza
+      arr.sort((a, b) => b.threat - a.threat);
       conflicts.push({
         defender: def,
         receivers: arr.map(a => a.player),
-        chosen: arr[0].player, // toma al más cercano
+        chosen: arr[0].player,                    // el más probable de amarrar
         freed: arr.slice(1).map(a => a.player)
       });
     }
   });
-  // Asignar greedy
+  // Asignar greedy por amenaza
   candidatePairs.forEach(pair => {
     if (coveredBy[pair.player]) return;
     if (committed.has(pair.defender)) return;
@@ -1342,7 +1370,7 @@ function dRender() {
   }
 
   // MOTIONS (movimiento pre-snap) — línea punteada con guiones largos
-  const allPlayers = dState.doubleQB ? ['X','H','Y','C','QB'] : ['X','H','Y','C'];
+  const allPlayers = dQBIsReceiver() ? ['X','H','Y','C','QB'] : ['X','H','Y','C'];
   const animOn = dState.anim.running;
   allPlayers.forEach(p => {
     const motion = dState.motions[p];
@@ -1377,8 +1405,8 @@ function dRender() {
     }
   });
 
-  // Routes (incluye QB cuando doubleQB está activo)
-  const routePlayers = dState.doubleQB ? ['X','H','Y','C','QB'] : ['X','H','Y','C'];
+  // Routes (incluye QB cuando es receptor: doble QB o snap a otro jugador)
+  const routePlayers = dQBIsReceiver() ? ['X','H','Y','C','QB'] : ['X','H','Y','C'];
   routePlayers.forEach(p => {
     const route = dState.routes[p];
     if (!route || route.length === 0) return;
@@ -1508,11 +1536,12 @@ function dRender() {
     dField.appendChild(g);
   });
 
-  // QB — clickeable como receptor cuando doubleQB está activo
+  // QB — clickeable como receptor cuando es receptor (doble QB o snap a otro jugador)
   const qb = dGetQB();
-  const qbSel = dState.doubleQB && dState.selectedPlayer === 'QB';
+  const qbReceiver = dQBIsReceiver();
+  const qbSel = qbReceiver && dState.selectedPlayer === 'QB';
   const qbG = document.createElementNS(ns, 'g');
-  if (dState.doubleQB) qbG.style.cursor = 'pointer';
+  if (qbReceiver) qbG.style.cursor = 'pointer';
   const qbR = document.createElementNS(ns, 'rect');
   qbR.setAttribute('x', qb.x - 14); qbR.setAttribute('y', qb.y - 11);
   qbR.setAttribute('width', 28); qbR.setAttribute('height', 22); qbR.setAttribute('rx', 3);
@@ -1528,7 +1557,7 @@ function dRender() {
   qbT.style.pointerEvents = 'none';
   qbT.textContent = 'QB';
   qbG.appendChild(qbT);
-  if (dState.doubleQB) {
+  if (qbReceiver) {
     qbG.addEventListener('click', (ev) => {
       ev.stopPropagation();
       dState.selectedPlayer = 'QB';
@@ -1737,7 +1766,7 @@ function dUpdateConceptInfo() {
 function dUpdatePlayersList() {
   const list = document.getElementById('d-players-list');
   list.innerHTML = '';
-  const players = dState.doubleQB ? ['X','H','Y','C','QB'] : ['X','H','Y','C'];
+  const players = dQBIsReceiver() ? ['X','H','Y','C','QB'] : ['X','H','Y','C'];
   players.forEach(p => {
     const route = dState.routes[p] || [];
     const pts = route.length;
@@ -2130,7 +2159,7 @@ function dLoadPlay(id) {
   document.querySelectorAll('[data-d-passer]').forEach(b => b.classList.toggle('active', b.dataset.dPasser === dState.secondPasser));
   document.getElementById('d-toggle-2qb').classList.toggle('active', dState.doubleQB);
   document.getElementById('d-2qb-row').style.display = dState.doubleQB ? 'block' : 'none';
-  document.getElementById('d-btn-qb').style.display = dState.doubleQB ? 'flex' : 'none';
+  dSyncQBReceiver();
   dRefreshPasserAvailability();
   dUpdateConceptInfo();
   dValidateAll();
@@ -2227,12 +2256,7 @@ document.getElementById('d-toggle-2qb').addEventListener('click', (e) => {
   dState.doubleQB = !dState.doubleQB;
   e.currentTarget.classList.toggle('active', dState.doubleQB);
   document.getElementById('d-2qb-row').style.display = dState.doubleQB ? 'block' : 'none';
-  document.getElementById('d-btn-qb').style.display = dState.doubleQB ? 'flex' : 'none';
-  // Si el jugador seleccionado es QB y se apaga doubleQB → vuelve a X
-  if (!dState.doubleQB && dState.selectedPlayer === 'QB') {
-    dState.selectedPlayer = 'X';
-    document.querySelectorAll('[data-d-player]').forEach(b => b.classList.toggle('active', b.dataset.dPlayer === 'X'));
-  }
+  dSyncQBReceiver();
   dValidateAll(); dUpdateHint(); dPersistAuto();
 });
 document.querySelectorAll('[data-d-passer]').forEach(btn => {
@@ -2257,9 +2281,20 @@ document.querySelectorAll('[data-d-snap]').forEach(btn => {
       document.querySelectorAll('[data-d-passer]').forEach(b => b.classList.toggle('active', b.dataset.dPasser === fallback));
     }
     dRefreshPasserAvailability();
-    dValidateAll(); dPersistAuto();
+    dSyncQBReceiver();
+    dValidateAll(); dUpdateHint(); dPersistAuto();
   });
 });
+
+// Muestra/oculta el botón QB y resetea la selección si el QB deja de ser receptor
+function dSyncQBReceiver() {
+  const isRec = dQBIsReceiver();
+  document.getElementById('d-btn-qb').style.display = isRec ? 'flex' : 'none';
+  if (!isRec && dState.selectedPlayer === 'QB') {
+    dState.selectedPlayer = 'X';
+    document.querySelectorAll('[data-d-player]').forEach(b => b.classList.toggle('active', b.dataset.dPlayer === 'X'));
+  }
+}
 
 // Deshabilita visualmente el botón de pasador 2° que coincide con el snap recipient
 function dRefreshPasserAvailability() {
@@ -2372,7 +2407,7 @@ document.getElementById('d-import-file').addEventListener('change', (e) => {
       document.querySelectorAll('[data-d-passer]').forEach(b => b.classList.toggle('active', b.dataset.dPasser === dState.secondPasser));
       document.getElementById('d-toggle-2qb').classList.toggle('active', dState.doubleQB);
       document.getElementById('d-2qb-row').style.display = dState.doubleQB ? 'block' : 'none';
-      document.getElementById('d-btn-qb').style.display = dState.doubleQB ? 'flex' : 'none';
+      dSyncQBReceiver();
       dRefreshPasserAvailability();
       dPopulateCovList();
       dUpdateConceptInfo();
@@ -2421,7 +2456,8 @@ function wbRouteStart(play, p) {
 
 // Renderiza una jugada guardada como SVG (string) para la tarjeta
 function wbPlaySVG(play, idx, opts) {
-  const W = 600, H = 360, LOS = 240;
+  // Recorte: el wristband sólo muestra hasta -5y de backfield para no malgastar espacio.
+  const W = 600, LOS = 240, BOTTOM = 300; // BOTTOM=300 → ~5y detrás de la LDE + marca del QB
   const rw = opts.routeWeight === 'thin' ? 2.5 : opts.routeWeight === 'thick' ? 6 : 4;
   let defs = '<defs>';
   ['X','H','Y','C','QB'].forEach(p => {
@@ -2429,9 +2465,9 @@ function wbPlaySVG(play, idx, opts) {
     defs += `<marker id="wba-${idx}-${p}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="${c}"/></marker>`;
   });
   defs += '</defs>';
-  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">${defs}`;
-  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="#ffffff"/>`;
-  s += `<rect x="14" y="14" width="572" height="332" fill="none" stroke="#cbd5e1" stroke-width="1.5"/>`;
+  let s = `<svg viewBox="0 0 ${W} ${BOTTOM}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">${defs}`;
+  s += `<rect x="0" y="0" width="${W}" height="${BOTTOM}" fill="#ffffff"/>`;
+  s += `<rect x="14" y="14" width="572" height="${BOTTOM-28}" fill="none" stroke="#cbd5e1" stroke-width="1.5"/>`;
   if (opts.zones) {
     s += `<rect x="14" y="14" width="286" height="218" fill="#7c4dff" fill-opacity="0.05"/>`;
     s += `<rect x="300" y="14" width="286" height="218" fill="#7c4dff" fill-opacity="0.05"/>`;
@@ -2441,7 +2477,7 @@ function wbPlaySVG(play, idx, opts) {
   [90,140].forEach(y => { s += `<line x1="14" y1="${y}" x2="586" y2="${y}" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3 5"/>`; });
   // LOS
   s += `<line x1="14" y1="${LOS}" x2="586" y2="${LOS}" stroke="#0891b2" stroke-width="2.5"/>`;
-  s += `<line x1="300" y1="14" x2="300" y2="346" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="2 6"/>`;
+  s += `<line x1="300" y1="14" x2="300" y2="${BOTTOM-14}" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="2 6"/>`;
   // motions
   ['X','H','Y','C','QB'].forEach(p => {
     const m = play.motions && play.motions[p];
@@ -2740,7 +2776,7 @@ document.getElementById('d-toggle-curves').classList.toggle('active', dState.smo
 document.getElementById('d-toggle-depths').classList.toggle('active', dState.showDepths);
 document.getElementById('d-toggle-2qb').classList.toggle('active', dState.doubleQB);
 document.getElementById('d-2qb-row').style.display = dState.doubleQB ? 'block' : 'none';
-document.getElementById('d-btn-qb').style.display = dState.doubleQB ? 'flex' : 'none';
+dSyncQBReceiver();
 document.getElementById('d-mirror-btn').classList.toggle('active', dState.mirror);
 document.querySelectorAll('[data-d-passer]').forEach(b => b.classList.toggle('active', b.dataset.dPasser === dState.secondPasser));
 document.querySelectorAll('[data-d-snap]').forEach(b => b.classList.toggle('active', b.dataset.dSnap === dState.snapTo));
