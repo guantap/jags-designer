@@ -433,7 +433,7 @@
         <button class="d-tool-btn" data-d-player="H"><span class="d-swatch" style="background:#06b6d4"></span>H</button>
         <button class="d-tool-btn" data-d-player="Y"><span class="d-swatch" style="background:#a855f7"></span>Y</button>
         <button class="d-tool-btn" data-d-player="C"><span class="d-swatch" style="background:#fbbf24"></span>C</button>
-        <button class="d-tool-btn" data-d-player="QB" id="d-btn-qb" style="display:none"><span class="d-swatch" style="background:#dc2626"></span>QB</button>
+        <button class="d-tool-btn" data-d-player="QB" id="d-btn-qb"><span class="d-swatch" style="background:#dc2626"></span>QB</button>
       </div>
       <div class="d-tool-group">
         <span class="d-tool-label">MODO</span>
@@ -1602,13 +1602,13 @@ function dRender() {
       lbl.textContent = 'M';
       dField.appendChild(lbl);
     });
-    // BLITZ: rushea al QB — durante la animación avanza hacia él
+    // BLITZ: arranca SIEMPRE a 7 yardas de la LDE (regla de flag) y rushea al QB
     const blitzers = defenders.filter(d => d.type === 'blitz');
     if (blitzers.length > 0) {
-      const qbPos = dGetQB();
+      const qbPos = animOn ? dPlayerAnimPos('QB') : dGetQB();
+      const by0 = D_FIELD.losY - 70; // 7y detrás de la LDE, lado defensivo
       blitzers.forEach((b, i) => {
         const bx0 = 300 + (i === 0 ? 0 : (i % 2 === 0 ? -60 : 60));
-        const by0 = qbPos.y - 80;
         let bx = bx0, by = by0;
         if (animOn && rf > 0) {
           bx = bx0 + (qbPos.x - bx0) * rf;
@@ -1668,7 +1668,7 @@ function dRender() {
   }
 
   // MOTIONS (movimiento pre-snap) — línea punteada con guiones largos
-  const allPlayers = dQBIsReceiver() ? ['X','H','Y','C','QB'] : ['X','H','Y','C'];
+  const allPlayers = ['X','H','Y','C','QB']; // el QB siempre puede moverse
   allPlayers.forEach(p => {
     const motion = dState.motions[p];
     if (!motion || motion.length === 0) return;
@@ -1702,8 +1702,8 @@ function dRender() {
     }
   });
 
-  // Routes (incluye QB cuando es receptor: doble QB o snap a otro jugador)
-  const routePlayers = dQBIsReceiver() ? ['X','H','Y','C','QB'] : ['X','H','Y','C'];
+  // Routes — el QB siempre puede tener movimiento (rollout/pocket post-snap)
+  const routePlayers = ['X','H','Y','C','QB'];
   routePlayers.forEach(p => {
     const route = dState.routes[p];
     if (!route || route.length === 0) return;
@@ -1830,10 +1830,9 @@ function dRender() {
     dField.appendChild(g);
   });
 
-  // QB — arrastrable siempre · seleccionable cuando es receptor
+  // QB — arrastrable y editable siempre (movimiento post-snap / rollout)
   const qb = animOn ? dPlayerAnimPos('QB') : dGetQB();
-  const qbReceiver = dQBIsReceiver();
-  const qbSel = qbReceiver && dState.selectedPlayer === 'QB';
+  const qbSel = dState.selectedPlayer === 'QB';
   const qbG = document.createElementNS(ns, 'g');
   const qbR = document.createElementNS(ns, 'rect');
   qbR.setAttribute('x', qb.x - 14); qbR.setAttribute('y', qb.y - 11);
@@ -1927,11 +1926,9 @@ dField.addEventListener('pointerup', (e) => {
     // jugador: tap sin mover = seleccionar
     if (dg.type === 'player' && !dDragMoved) {
       const p = dg.player;
-      if (p !== 'QB' || dQBIsReceiver()) {
-        dState.selectedPlayer = p;
-        document.querySelectorAll('[data-d-player]').forEach(b => b.classList.toggle('active', b.dataset.dPlayer === p));
-        dRender(); dUpdatePlayersList(); dUpdateHint();
-      }
+      dState.selectedPlayer = p;
+      document.querySelectorAll('[data-d-player]').forEach(b => b.classList.toggle('active', b.dataset.dPlayer === p));
+      dRender(); dUpdatePlayersList(); dUpdateHint();
     } else if (dDragMoved) {
       dValidateAll();
     }
@@ -2118,7 +2115,7 @@ function dUpdateConceptInfo() {
 function dUpdatePlayersList() {
   const list = document.getElementById('d-players-list');
   list.innerHTML = '';
-  const players = dQBIsReceiver() ? ['X','H','Y','C','QB'] : ['X','H','Y','C'];
+  const players = ['X','H','Y','C','QB'];
   players.forEach(p => {
     const route = dState.routes[p] || [];
     const pts = route.length;
@@ -2720,14 +2717,9 @@ document.querySelectorAll('[data-d-snap]').forEach(btn => {
   });
 });
 
-// Muestra/oculta el botón QB y resetea la selección si el QB deja de ser receptor
+// El QB siempre está disponible como pieza editable (movimiento post-snap)
 function dSyncQBReceiver() {
-  const isRec = dQBIsReceiver();
-  document.getElementById('d-btn-qb').style.display = isRec ? 'flex' : 'none';
-  if (!isRec && dState.selectedPlayer === 'QB') {
-    dState.selectedPlayer = 'X';
-    document.querySelectorAll('[data-d-player]').forEach(b => b.classList.toggle('active', b.dataset.dPlayer === 'X'));
-  }
+  document.getElementById('d-btn-qb').style.display = 'flex';
 }
 
 // Deshabilita visualmente el botón de pasador 2° que coincide con el snap recipient
