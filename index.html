@@ -296,24 +296,65 @@
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
 
+  .cs-input{
+    width:100%;background:var(--bg-2);border:1px solid var(--line);color:var(--ink);
+    padding:.45rem .6rem;border-radius:5px;
+    font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.78rem;
+  }
+  #cs-print-area,#pb-print-area{display:none}
+
+  /* ===== CALL SHEET (layout compartido pantalla + impresión) ===== */
+  .cs-sheet{margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;color:#000;background:#fff}
+  .cs-head{border-bottom:3px solid #000;padding-bottom:6px;margin-bottom:10px}
+  .cs-head .cs-t1{font-size:22px;font-weight:900;letter-spacing:-.01em}
+  .cs-head .cs-t2{font-size:12px;color:#444;margin-top:2px}
+  .cs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .cs-cell{border:1.5px solid #000;border-radius:4px;overflow:hidden}
+  .cs-cell-h{background:#0f172a;color:#fff;padding:3px 7px;display:flex;justify-content:space-between;align-items:baseline}
+  .cs-cell-h .cs-n{font-size:14px;font-weight:900}
+  .cs-cell-h .cs-c{font-size:9px;letter-spacing:.05em;opacity:.85}
+  .cs-cell svg{display:block;width:100%;height:auto}
+
   /* ============== ESTILOS DE IMPRESIÓN ============== */
   @media print {
     body{background:#fff;padding:0;margin:0}
     body::before{display:none}
     body > .header, body > .designer-app, .wb-overlay { display:none !important }
-    #wb-print-area{display:block !important}
+
+    /* --- WRISTBAND --- */
+    body.print-wb #wb-print-area{display:block !important}
     .wb-page{page-break-after:always;display:flex;align-items:center;justify-content:center;padding:0.2in}
     .wb-page:last-child{page-break-after:auto}
-    .wb-card{
-      page-break-inside:avoid;
-      border:1.5px solid #000;
-      display:grid;gap:3px;
-      background:#fff;
-    }
+    .wb-card{page-break-inside:avoid;border:1.5px solid #000;display:grid;gap:3px;background:#fff}
     .wb-card-cell{border:1px solid #888;overflow:hidden;position:relative;background:#fff}
     .wb-card-cell svg{display:block;width:100%;height:100%}
     .wb-cell-label{font-size:9px;background:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .wb-card-cell svg rect,.wb-card-cell svg circle,.wb-card-cell svg path{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+    /* --- CALL SHEET --- */
+    body.print-cs #cs-print-area{display:block !important}
+    .cs-sheet{width:7.5in}
+    .cs-cell{page-break-inside:avoid}
+    .cs-cell-h{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+    /* --- PLAYBOOK --- */
+    body.print-pb #pb-print-area{display:block !important}
+    .pb-page{page-break-after:always;padding:0.4in 0.5in;font-family:'Helvetica Neue',Arial,sans-serif;color:#000}
+    .pb-page:last-child{page-break-after:auto}
+    .pb-title{font-size:24px;font-weight:900;letter-spacing:-.01em;border-bottom:3px solid #000;padding-bottom:4px}
+    .pb-sub{font-size:12px;color:#444;margin:3px 0 10px}
+    .pb-diagram{border:1.5px solid #000;border-radius:4px;overflow:hidden}
+    .pb-diagram svg{display:block;width:100%;height:auto}
+    .pb-h{font-size:11px;font-weight:900;letter-spacing:.1em;margin:12px 0 5px;color:#0f172a;border-bottom:1px solid #999;padding-bottom:2px}
+    .pb-cov-table{width:100%;border-collapse:collapse;font-size:10px}
+    .pb-cov-table td{border:1px solid #bbb;padding:3px 6px}
+    .pb-cov-table td.pb-cn{font-weight:900;width:90px}
+    .pb-cov-table td.ok{background:#dcfce7;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .pb-cov-table td.bad{background:#fee2e2;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .pb-notes{font-size:10.5px;line-height:1.55;color:#222}
+    .pb-notes .pb-blank{border-bottom:1px solid #ccc;height:16px;margin-top:4px}
+
+    .wb-card-cell svg *, .cs-cell svg *, .pb-diagram svg *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    @page{margin:0.4in}
   }
 </style>
 </head>
@@ -459,6 +500,10 @@
         <button class="d-tool-btn" id="d-wristband-btn" style="flex:1;justify-content:center;background:var(--accent-4);color:#fff;border-color:var(--accent-4)">🖨 WRISTBAND</button>
         <button class="d-tool-btn" id="d-compare-btn" style="flex:1;justify-content:center">⚖ COMPARAR</button>
       </div>
+      <div class="d-save-row" style="margin-top:.5rem">
+        <button class="d-tool-btn" id="d-callsheet-btn" style="flex:1;justify-content:center">📋 CALL SHEET</button>
+        <button class="d-tool-btn" id="d-playbook-btn" style="flex:1;justify-content:center">📖 PLAYBOOK</button>
+      </div>
       <input type="file" id="d-import-file" accept="application/json" style="display:none">
       <div class="d-saved-list" id="d-saved-list"></div>
     </div>
@@ -515,6 +560,8 @@
   </div>
 </div>
 <div id="wb-print-area"></div>
+<div id="cs-print-area"></div>
+<div id="pb-print-area"></div>
 
 <!-- ================= MODAL COMPARAR JUGADAS ================= -->
 <div class="wb-overlay" id="cmp-overlay">
@@ -540,6 +587,72 @@
           <div class="cmp-info" id="cmp-info-b"></div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL CALL SHEET ================= -->
+<div class="wb-overlay" id="cs-overlay">
+  <div class="wb-modal">
+    <div class="wb-modal-head">
+      <h2>CALL SHEET · HOJA DE JUGADAS (CARTA VERTICAL)</h2>
+      <button class="wb-x" id="cs-close">✕</button>
+    </div>
+    <div class="wb-modal-body" style="grid-template-columns:1fr 1fr">
+      <div class="wb-col">
+        <div class="wb-section">
+          <h4>01 · ENCABEZADO</h4>
+          <div class="wb-opt-row"><label>Equipo</label><input type="text" id="cs-team" placeholder="JAGUARES" class="cs-input"></div>
+          <div class="wb-opt-row"><label>Rival</label><input type="text" id="cs-rival" placeholder="Rival" class="cs-input"></div>
+          <div class="wb-opt-row"><label>Fecha / nota</label><input type="text" id="cs-date" placeholder="Fecha o situación" class="cs-input"></div>
+        </div>
+        <div class="wb-section">
+          <h4>02 · JUGADAS (máx. 8)</h4>
+          <div class="wb-toolbar">
+            <button class="wb-mini-btn" id="cs-none">Limpiar</button>
+            <span class="wb-count" id="cs-count">0 / 8</span>
+          </div>
+          <div class="wb-plays" id="cs-plays"></div>
+        </div>
+      </div>
+      <div class="wb-col">
+        <div class="wb-section">
+          <h4>03 · VISTA PREVIA</h4>
+          <div class="wb-preview" id="cs-preview" style="background:#f1f5f9;padding:10px"></div>
+        </div>
+      </div>
+    </div>
+    <div class="wb-modal-foot">
+      <span id="cs-summary" class="wb-summary"></span>
+      <button class="wb-print-btn" id="cs-print">🖨 IMPRIMIR / GUARDAR PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL PLAYBOOK ================= -->
+<div class="wb-overlay" id="pb-overlay">
+  <div class="wb-modal">
+    <div class="wb-modal-head">
+      <h2>PLAYBOOK · UNA JUGADA POR PÁGINA CON NOTAS</h2>
+      <button class="wb-x" id="pb-close">✕</button>
+    </div>
+    <div class="wb-modal-body" style="grid-template-columns:1fr">
+      <div class="wb-col">
+        <div class="wb-section">
+          <h4>JUGADAS A INCLUIR · una página por jugada</h4>
+          <div class="wb-toolbar">
+            <button class="wb-mini-btn" id="pb-all">Todas</button>
+            <button class="wb-mini-btn" id="pb-none">Ninguna</button>
+            <span class="wb-count" id="pb-count">0 seleccionadas</span>
+          </div>
+          <div class="wb-plays" id="pb-plays"></div>
+          <p style="font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.66rem;color:var(--ink-faint);margin-top:.6rem;letter-spacing:.04em">Cada página: campo con las 5 zonas + profundidad de rutas · simulador vs las 7 coberturas · análisis de la jugada.</p>
+        </div>
+      </div>
+    </div>
+    <div class="wb-modal-foot">
+      <span id="pb-summary" class="wb-summary"></span>
+      <button class="wb-print-btn" id="pb-print">🖨 IMPRIMIR / GUARDAR PDF</button>
     </div>
   </div>
 </div>
@@ -936,7 +1049,7 @@ const D_COVERAGES = {
     name: 'COBERTURA 1',
     note: '1 profundo + marcaje personal',
     defenders: [
-      { type:'zone', x:300, y:90, radius: 95, label:'PROF' },
+      { type:'zone', x:300, y:90, radius: 95, label:'S' },
       { type:'man',  radius: 40, label:'M1' },
       { type:'man',  radius: 40, label:'M2' },
       { type:'man',  radius: 40, label:'M3' },
@@ -947,33 +1060,33 @@ const D_COVERAGES = {
     name: 'COBERTURA 2',
     note: '2 profundos · Esquinas cortas',
     defenders: [
-      { type:'zone', x:150, y:100, radius:115, label:'P-I' },
-      { type:'zone', x:450, y:100, radius:115, label:'P-D' },
-      { type:'zone', x: 80, y:185, radius: 70, label:'E-I' },
-      { type:'zone', x:520, y:185, radius: 70, label:'E-D' },
-      { type:'zone', x:300, y:175, radius: 80, label:'APO' }
+      { type:'zone', x:150, y:100, radius:115, label:'S-I' },
+      { type:'zone', x:450, y:100, radius:115, label:'S-D' },
+      { type:'zone', x: 80, y:185, radius: 70, label:'CB-I' },
+      { type:'zone', x:520, y:185, radius: 70, label:'CB-D' },
+      { type:'zone', x:300, y:175, radius: 80, label:'LB' }
     ]
   },
   cover3: {
     name: 'COBERTURA 3',
     note: '3 tercios profundos · 2 cortos',
     defenders: [
-      { type:'zone', x:120, y:85, radius:105, label:'T-I' },
-      { type:'zone', x:300, y:70, radius:105, label:'PROF' },
-      { type:'zone', x:480, y:85, radius:105, label:'T-D' },
-      { type:'zone', x:200, y:180, radius: 80, label:'AP-I' },
-      { type:'zone', x:400, y:180, radius: 80, label:'AP-D' }
+      { type:'zone', x:120, y:85, radius:105, label:'CB-I' },
+      { type:'zone', x:300, y:70, radius:105, label:'S' },
+      { type:'zone', x:480, y:85, radius:105, label:'CB-D' },
+      { type:'zone', x:200, y:180, radius: 80, label:'LB-I' },
+      { type:'zone', x:400, y:180, radius: 80, label:'LB-D' }
     ]
   },
   cover4: {
     name: 'COBERTURA 4',
     note: 'Cuartos · 1 corto',
     defenders: [
-      { type:'zone', x:120, y:75, radius: 90, label:'C1' },
-      { type:'zone', x:260, y:75, radius: 90, label:'C2' },
-      { type:'zone', x:340, y:75, radius: 90, label:'C3' },
-      { type:'zone', x:480, y:75, radius: 90, label:'C4' },
-      { type:'zone', x:300, y:190, radius: 75, label:'APO' }
+      { type:'zone', x:120, y:75, radius: 90, label:'CB-I' },
+      { type:'zone', x:260, y:75, radius: 90, label:'S-I' },
+      { type:'zone', x:340, y:75, radius: 90, label:'S-D' },
+      { type:'zone', x:480, y:75, radius: 90, label:'CB-D' },
+      { type:'zone', x:300, y:190, radius: 75, label:'LB' }
     ]
   },
   // COVER 2 INVERT (Roll Strong / Buzz): CB lado fuerte baja al flat amplio,
@@ -985,11 +1098,11 @@ const D_COVERAGES = {
     note: 'Rotación al fuerte · 2 profundos · 2 cortos · 1 blitz',
     adaptStrong: true,
     defenders: [
-      { type:'zone', x:480, y:90, radius:115, label:'SAF' },   // Safety profundo lado fuerte
-      { type:'zone', x:150, y:95, radius:115, label:'E-DB' },  // Esquina débil rotada a 2do safety
-      { type:'zone', x:400, y:175, radius:110, label:'E-FZ' }, // Esquina fuerte al corto amplio
-      { type:'zone', x:180, y:185, radius: 80, label:'APO' },  // Apoyador débil corto
-      { type:'blitz', label:'BLZ' }
+      { type:'zone', x:480, y:90, radius:115, label:'S-F' },   // Safety profundo lado fuerte
+      { type:'zone', x:150, y:95, radius:115, label:'S-B' },   // CB débil rotado a 2do safety
+      { type:'zone', x:400, y:175, radius:110, label:'CB-F' }, // CB fuerte al corto amplio
+      { type:'zone', x:180, y:185, radius: 80, label:'LB' },   // Apoyador débil corto
+      { type:'blitz', label:'BLITZ' }
     ]
   },
   // CAJA: 5 defensores apretados cerca de la LDE (0-7y). Ahoga corto/intermedio.
@@ -998,11 +1111,11 @@ const D_COVERAGES = {
     name: 'CAJA',
     note: '5 en la caja · sin profundidad · vulnerable a verticales',
     defenders: [
-      { type:'zone', x: 90, y:200, radius: 65, label:'EXT-I' },
-      { type:'zone', x:210, y:190, radius: 60, label:'INT-I' },
-      { type:'zone', x:300, y:180, radius: 65, label:'CENT' },
-      { type:'zone', x:390, y:190, radius: 60, label:'INT-D' },
-      { type:'zone', x:510, y:200, radius: 65, label:'EXT-D' }
+      { type:'zone', x: 90, y:200, radius: 65, label:'CB-I' },
+      { type:'zone', x:210, y:190, radius: 60, label:'LB-I' },
+      { type:'zone', x:300, y:180, radius: 65, label:'LB-C' },
+      { type:'zone', x:390, y:190, radius: 60, label:'LB-D' },
+      { type:'zone', x:510, y:200, radius: 65, label:'CB-D' }
     ]
   }
 };
@@ -2496,6 +2609,14 @@ function wbPlaySVG(play, idx, opts) {
     r.forEach(pt => d += ` L ${pt.x} ${pt.y}`);
     const color = (p === 'QB') ? D_QB_COLOR : D_COLORS[p];
     s += `<path d="${d}" fill="none" stroke="${color}" stroke-width="${rw}" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#wba-${idx}-${p})"/>`;
+    // etiqueta de profundidad en el endpoint (opcional)
+    if (opts.depths) {
+      const e = r[r.length - 1];
+      const depth = Math.max(0, Math.round((LOS - e.y) / 10));
+      const w = depth > 9 ? 30 : 24;
+      s += `<rect x="${e.x+9}" y="${e.y-20}" width="${w}" height="16" rx="3" fill="#0f172a" stroke="${color}" stroke-width="1.2"/>`;
+      s += `<text x="${e.x+9+w/2}" y="${e.y-8}" font-size="11" font-weight="900" text-anchor="middle" fill="#fff" font-family="Helvetica Neue,Arial,sans-serif">${depth}y</text>`;
+    }
   });
   // players
   ['X','H','Y','C'].forEach(p => {
@@ -2679,8 +2800,16 @@ document.getElementById('wb-select-none').addEventListener('click', () => {
 });
 document.getElementById('wb-print').addEventListener('click', () => {
   if (!wbBuildPrint()) { alert('Selecciona al menos una jugada para imprimir.'); return; }
-  setTimeout(() => { window.print(); }, 60);
+  dPrintWithMode('print-wb');
 });
+
+// Imprime con una clase de modo en el body y la limpia al terminar
+function dPrintWithMode(modeClass) {
+  document.body.classList.add(modeClass);
+  const cleanup = () => { document.body.classList.remove(modeClass); window.removeEventListener('afterprint', cleanup); };
+  window.addEventListener('afterprint', cleanup);
+  setTimeout(() => { window.print(); setTimeout(cleanup, 1500); }, 60);
+}
 
 // ==================== COMPARAR JUGADAS ====================
 // Evalúa una jugada guardada vs todas las coberturas sin afectar el estado vivo.
@@ -2704,7 +2833,7 @@ function dEvalPlay(play) {
   Object.keys(D_COVERAGES).forEach(k => {
     const sim = simulateCoverage(k);
     const ok = sim.open.length >= 1;
-    results[k] = { ok, open: sim.open.length };
+    results[k] = { ok, open: sim.open.length, openPlayers: sim.open.slice() };
     if (ok) pass++;
   });
   Object.assign(dState, snap);
@@ -2761,6 +2890,155 @@ document.getElementById('cmp-overlay').addEventListener('click', (e) => {
 });
 document.getElementById('cmp-sel-a').addEventListener('change', () => cmpRenderSide('cmp-sel-a','cmp-dia-a','cmp-info-a',0));
 document.getElementById('cmp-sel-b').addEventListener('change', () => cmpRenderSide('cmp-sel-b','cmp-dia-b','cmp-info-b',1));
+
+// ==================== CALL SHEET ====================
+const csState = { selected: [] }; // ids ordenados, máx 8
+
+function csSheetHTML() {
+  const plays = csState.selected.map(id => dGetSaved().find(p => p.id === id)).filter(Boolean);
+  const team = (document.getElementById('cs-team').value || '').trim() || 'CALL SHEET';
+  const rival = (document.getElementById('cs-rival').value || '').trim();
+  const date = (document.getElementById('cs-date').value || '').trim();
+  const sub = [rival ? ('vs ' + rival) : '', date].filter(Boolean).join('  ·  ') || 'Hoja de jugadas · 5v5 IFAF';
+  let html = `<div class="cs-sheet"><div class="cs-head"><div class="cs-t1">${team}</div><div class="cs-t2">${sub}</div></div><div class="cs-grid">`;
+  for (let i = 0; i < 8; i++) {
+    const pl = plays[i];
+    if (pl) {
+      const concept = pl.concepts ? (pl.concepts.strong || '').toUpperCase() : '';
+      html += `<div class="cs-cell"><div class="cs-cell-h"><span class="cs-n">${i+1} · ${pl.name || 'Jugada'}</span><span class="cs-c">${concept}</span></div>${wbPlaySVG(pl, 800+i, {routeWeight:'medium', zones:true, labelMode:'none'})}</div>`;
+    } else {
+      html += `<div class="cs-cell" style="opacity:.25"><div class="cs-cell-h"><span class="cs-n">${i+1}</span><span class="cs-c">—</span></div><div style="aspect-ratio:2/1;background:#f1f5f9"></div></div>`;
+    }
+  }
+  html += '</div></div>';
+  return html;
+}
+function csRenderPlays() {
+  const cont = document.getElementById('cs-plays');
+  cont.innerHTML = '';
+  const saved = dGetSaved();
+  if (saved.length === 0) { cont.innerHTML = '<div class="wb-empty">No hay jugadas guardadas.</div>'; return; }
+  saved.forEach(pl => {
+    const order = csState.selected.indexOf(pl.id);
+    const sel = order >= 0;
+    const item = document.createElement('div');
+    item.className = 'wb-play-item' + (sel ? ' sel' : '');
+    const meta = pl.concepts ? pl.concepts.strong : '';
+    item.innerHTML = `<div class="wb-play-check">${sel ? (order+1) : ''}</div><div class="wb-play-name">${pl.name || 'Sin nombre'}</div><div class="wb-play-meta">${meta}</div>`;
+    item.addEventListener('click', () => {
+      const idx = csState.selected.indexOf(pl.id);
+      if (idx >= 0) csState.selected.splice(idx, 1);
+      else { if (csState.selected.length >= 8) { alert('Máximo 8 jugadas en el call sheet.'); return; } csState.selected.push(pl.id); }
+      csRenderPlays(); csRenderPreview();
+    });
+    cont.appendChild(item);
+  });
+}
+function csRenderPreview() {
+  document.getElementById('cs-preview').innerHTML = csSheetHTML();
+  document.getElementById('cs-count').textContent = `${csState.selected.length} / 8`;
+  document.getElementById('cs-summary').textContent = `${csState.selected.length} jugadas · 1 página Carta vertical`;
+}
+function csOpen() {
+  if (csState.selected.length === 0) dGetSaved().slice(0, 8).forEach(p => csState.selected.push(p.id));
+  csRenderPlays(); csRenderPreview();
+  document.getElementById('cs-overlay').classList.add('open');
+}
+document.getElementById('d-callsheet-btn').addEventListener('click', csOpen);
+document.getElementById('cs-close').addEventListener('click', () => document.getElementById('cs-overlay').classList.remove('open'));
+document.getElementById('cs-overlay').addEventListener('click', (e) => { if (e.target.id === 'cs-overlay') e.currentTarget.classList.remove('open'); });
+document.getElementById('cs-none').addEventListener('click', () => { csState.selected = []; csRenderPlays(); csRenderPreview(); });
+['cs-team','cs-rival','cs-date'].forEach(id => document.getElementById(id).addEventListener('input', csRenderPreview));
+document.getElementById('cs-print').addEventListener('click', () => {
+  if (csState.selected.length === 0) { alert('Selecciona al menos una jugada.'); return; }
+  document.getElementById('cs-print-area').innerHTML = csSheetHTML();
+  dPrintWithMode('print-cs');
+});
+
+// ==================== PLAYBOOK ====================
+const pbState = { selected: new Set() };
+
+function dPlayAnalysisText(play, ev) {
+  const wins = [], losses = [];
+  Object.entries(D_COVERAGES).forEach(([k, c]) => {
+    if (ev.results[k].ok) wins.push(c.name); else losses.push(c.name);
+  });
+  const concept = play.concepts && D_CONCEPTS[play.concepts.strong];
+  let txt = concept ? (concept.description + ' ') : '';
+  if (wins.length) txt += `Abre receptor contra: ${wins.join(', ')}. `;
+  if (losses.length) txt += `Se ahoga contra: ${losses.join(', ')} — ajustar spacing, motion o añadir un crosser.`;
+  else txt += 'Jugada universal: vence las 7 coberturas conocidas — llámala con confianza.';
+  return txt;
+}
+function pbBuildPages() {
+  const area = document.getElementById('pb-print-area');
+  area.innerHTML = '';
+  const plays = dGetSaved().filter(p => pbState.selected.has(p.id));
+  if (!plays.length) return false;
+  plays.forEach((pl, i) => {
+    const ev = dEvalPlay(pl);
+    const concept = pl.concepts ? (pl.concepts.strong + (pl.concepts.weak ? (' + ' + String(pl.concepts.weak).replace('concept:','')) : '')) : '';
+    let covRows = '';
+    Object.entries(D_COVERAGES).forEach(([k, c]) => {
+      const r = ev.results[k];
+      const who = (r.openPlayers && r.openPlayers.length) ? r.openPlayers.join(' · ') : '—';
+      covRows += `<tr><td class="pb-cn">${c.name}</td><td class="${r.ok?'ok':'bad'}">${r.ok ? ('✓ LIBRE: ' + who) : '✕ CUBIERTOS'}</td></tr>`;
+    });
+    const page = document.createElement('div');
+    page.className = 'pb-page';
+    page.innerHTML = `
+      <div class="pb-title">#${i+1} · ${pl.name || 'Sin nombre'}</div>
+      <div class="pb-sub">Concepto: ${concept.toUpperCase()} · Formación: ${(pl.formation||'2x1').toUpperCase()}${pl.doubleQB?' · DOBLE QB':''}${pl.mirror?' · ESPEJO':''} · Vence ${ev.pass}/${ev.total} coberturas</div>
+      <div class="pb-diagram">${wbPlaySVG(pl, 600+i, {routeWeight:'medium', zones:true, depths:true, labelMode:'none'})}</div>
+      <div class="pb-h">SIMULADOR VS COBERTURAS · QUIÉN QUEDA LIBRE</div>
+      <table class="pb-cov-table"><tbody>${covRows}</tbody></table>
+      <div class="pb-h">ANÁLISIS DE LA JUGADA</div>
+      <div class="pb-notes">${dPlayAnalysisText(pl, ev)}</div>
+      <div class="pb-h">NOTAS DEL ENTRENADOR</div>
+      <div class="pb-notes"><div class="pb-blank"></div><div class="pb-blank"></div><div class="pb-blank"></div></div>
+    `;
+    area.appendChild(page);
+  });
+  return true;
+}
+function pbRenderPlays() {
+  const cont = document.getElementById('pb-plays');
+  cont.innerHTML = '';
+  const saved = dGetSaved();
+  if (saved.length === 0) { cont.innerHTML = '<div class="wb-empty">No hay jugadas guardadas.</div>'; return; }
+  saved.forEach(pl => {
+    const sel = pbState.selected.has(pl.id);
+    const item = document.createElement('div');
+    item.className = 'wb-play-item' + (sel ? ' sel' : '');
+    const meta = pl.concepts ? pl.concepts.strong : '';
+    item.innerHTML = `<div class="wb-play-check">${sel ? '✓' : ''}</div><div class="wb-play-name">${pl.name || 'Sin nombre'}</div><div class="wb-play-meta">${meta}</div>`;
+    item.addEventListener('click', () => {
+      if (pbState.selected.has(pl.id)) pbState.selected.delete(pl.id);
+      else pbState.selected.add(pl.id);
+      pbRenderPlays(); pbUpdateSummary();
+    });
+    cont.appendChild(item);
+  });
+}
+function pbUpdateSummary() {
+  const n = pbState.selected.size;
+  document.getElementById('pb-count').textContent = `${n} seleccionadas`;
+  document.getElementById('pb-summary').textContent = `${n} jugadas · ${n} página(s) Carta`;
+}
+function pbOpen() {
+  if (pbState.selected.size === 0) dGetSaved().forEach(p => pbState.selected.add(p.id));
+  pbRenderPlays(); pbUpdateSummary();
+  document.getElementById('pb-overlay').classList.add('open');
+}
+document.getElementById('d-playbook-btn').addEventListener('click', pbOpen);
+document.getElementById('pb-close').addEventListener('click', () => document.getElementById('pb-overlay').classList.remove('open'));
+document.getElementById('pb-overlay').addEventListener('click', (e) => { if (e.target.id === 'pb-overlay') e.currentTarget.classList.remove('open'); });
+document.getElementById('pb-all').addEventListener('click', () => { dGetSaved().forEach(p => pbState.selected.add(p.id)); pbRenderPlays(); pbUpdateSummary(); });
+document.getElementById('pb-none').addEventListener('click', () => { pbState.selected.clear(); pbRenderPlays(); pbUpdateSummary(); });
+document.getElementById('pb-print').addEventListener('click', () => {
+  if (!pbBuildPages()) { alert('Selecciona al menos una jugada.'); return; }
+  dPrintWithMode('print-pb');
+});
 
 // ==================== BOOT ====================
 dLoadAuto();
