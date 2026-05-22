@@ -352,6 +352,14 @@
     .pb-cov-table td.bad{background:#fee2e2;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .pb-notes{font-size:10.5px;line-height:1.55;color:#222}
     .pb-notes .pb-blank{border-bottom:1px solid #ccc;height:16px;margin-top:4px}
+    /* narrativa completa dentro del Playbook (colores legibles en papel) */
+    .pb-narrative p{margin:0 0 5px}
+    .pb-narrative .nc{font-family:'SF Mono',Menlo,Consolas,monospace;font-size:9px;border:1px solid #94a3b8;border-radius:3px;padding:.5px 3px;color:#0f172a}
+    .pb-narrative .nb{color:#15803d;font-weight:700}
+    .pb-narrative .ny{color:#b45309;font-weight:700}
+    .pb-narrative .nr{color:#b91c1c;font-weight:700}
+    .pb-narrative strong{color:#0f172a}
+    .pb-narrative em{font-style:italic;color:#555}
 
     .wb-card-cell svg *, .cs-cell svg *, .pb-diagram svg *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     @page{margin:0.4in}
@@ -1943,15 +1951,13 @@ function dValidateAll() {
 }
 
 // ==================== NARRATIVA · EXPLICACIÓN DE LA JUGADA ====================
-function dRenderNarrative() {
-  const el = document.getElementById('d-narrative');
-  if (!el) return;
+// Construye el HTML del análisis narrativo a partir del estado ACTUAL (dState).
+// Reutilizable: panel en vivo y página del Playbook (con estado intercambiado).
+function dNarrativeHTML() {
   const receivers = dActiveReceivers();
   if (receivers.length === 0) {
-    el.innerHTML = `<h5>Análisis</h5><p>Dibuja al menos un receptor delante de la LDE para que la herramienta narre la jugada y sus vulnerabilidades.</p>`;
-    return;
+    return '<p>Dibuja al menos un receptor delante de la LDE para narrar la jugada y sus vulnerabilidades.</p>';
   }
-
   const strong = D_CONCEPTS[dState.concepts.strong];
   const weakKey = dState.concepts.weak;
   let weakLabel = null;
@@ -1962,18 +1968,14 @@ function dRenderNarrative() {
   const ss = dStrongSide();
   const ssLabel = ss === 'L' ? 'izquierda' : (ss === 'R' ? 'derecha' : 'balanceado');
 
-  // Recorrer covers para narrar
-  const wins = [];
-  const losses = [];
-  const conflictNotes = [];
+  const wins = [], losses = [], conflictNotes = [];
   Object.entries(D_COVERAGES).forEach(([key, cov]) => {
     const sim = simulateCoverage(key);
     if (sim.open.length >= 1) {
       const openLabels = sim.open.join(', ');
       let why = '';
       if (sim.conflicts && sim.conflicts.length > 0) {
-        const cf = sim.conflicts[0];
-        why = ` (${cf.defender.label || 'zone'} forzado al 2v1)`;
+        why = ` (${sim.conflicts[0].defender.label || 'zona'} forzado al 2v1)`;
       } else if (sim.open.length === sim.total) {
         why = ' (defensa fuera de rango)';
       }
@@ -1988,25 +1990,27 @@ function dRenderNarrative() {
     }
   });
 
-  let html = `<h5>Análisis de la jugada</h5>`;
-  // Descripción del concepto
-  html += `<p><strong style="color:var(--accent-3)">${strong.name}</strong>`;
-  if (weakLabel) html += ` + <strong style="color:var(--accent-2)">${weakLabel}</strong> backside`;
+  let html = `<p><strong class="ny">${strong.name}</strong>`;
+  if (weakLabel) html += ` + <strong class="nr">${weakLabel}</strong> backside`;
   html += ` · lado fuerte <strong>${ssLabel}</strong>. ${strong.description}</p>`;
-
-  // Vulnerabilidades / fortalezas
   if (wins.length > 0) {
-    html += `<p><strong style="color:var(--accent-5)">Donde abre:</strong> ${wins.join(' · ')}.</p>`;
+    html += `<p><strong class="nb">Donde abre:</strong> ${wins.join(' · ')}.</p>`;
   }
   if (conflictNotes.length > 0) {
-    html += `<p><strong style="color:var(--accent-3)">Cómo se explota la zona:</strong> ${conflictNotes.join(' ')}</p>`;
+    html += `<p><strong class="ny">Cómo se explota la zona:</strong> ${conflictNotes.join(' ')}</p>`;
   }
   if (losses.length > 0) {
-    html += `<p><strong style="color:var(--accent-2)">Donde la matan:</strong> ${losses.join(' · ')}. <em>Ajusta el spacing o añade un crosser para forzar conflictos extra.</em></p>`;
+    html += `<p><strong class="nr">Donde la matan:</strong> ${losses.join(' · ')}. <em>Ajusta el spacing o añade un crosser para forzar conflictos extra.</em></p>`;
   } else if (wins.length === Object.keys(D_COVERAGES).length) {
     html += `<p class="nb">Jugada universal: vence las 7 coberturas conocidas. Llámala con confianza.</p>`;
   }
-  el.innerHTML = html;
+  return html;
+}
+
+function dRenderNarrative() {
+  const el = document.getElementById('d-narrative');
+  if (!el) return;
+  el.innerHTML = `<h5>Análisis de la jugada</h5>${dNarrativeHTML()}`;
 }
 
 function dRenderChecklist() {
@@ -2836,8 +2840,9 @@ function dEvalPlay(play) {
     results[k] = { ok, open: sim.open.length, openPlayers: sim.open.slice() };
     if (ok) pass++;
   });
+  const narrative = dNarrativeHTML(); // narrativa completa con el estado de esta jugada
   Object.assign(dState, snap);
-  return { results, pass, total: Object.keys(D_COVERAGES).length };
+  return { results, pass, total: Object.keys(D_COVERAGES).length, narrative };
 }
 function cmpPopulateSelect(selId) {
   const sel = document.getElementById(selId);
@@ -2958,18 +2963,6 @@ document.getElementById('cs-print').addEventListener('click', () => {
 // ==================== PLAYBOOK ====================
 const pbState = { selected: new Set() };
 
-function dPlayAnalysisText(play, ev) {
-  const wins = [], losses = [];
-  Object.entries(D_COVERAGES).forEach(([k, c]) => {
-    if (ev.results[k].ok) wins.push(c.name); else losses.push(c.name);
-  });
-  const concept = play.concepts && D_CONCEPTS[play.concepts.strong];
-  let txt = concept ? (concept.description + ' ') : '';
-  if (wins.length) txt += `Abre receptor contra: ${wins.join(', ')}. `;
-  if (losses.length) txt += `Se ahoga contra: ${losses.join(', ')} — ajustar spacing, motion o añadir un crosser.`;
-  else txt += 'Jugada universal: vence las 7 coberturas conocidas — llámala con confianza.';
-  return txt;
-}
 function pbBuildPages() {
   const area = document.getElementById('pb-print-area');
   area.innerHTML = '';
@@ -2993,7 +2986,7 @@ function pbBuildPages() {
       <div class="pb-h">SIMULADOR VS COBERTURAS · QUIÉN QUEDA LIBRE</div>
       <table class="pb-cov-table"><tbody>${covRows}</tbody></table>
       <div class="pb-h">ANÁLISIS DE LA JUGADA</div>
-      <div class="pb-notes">${dPlayAnalysisText(pl, ev)}</div>
+      <div class="pb-notes pb-narrative">${ev.narrative}</div>
       <div class="pb-h">NOTAS DEL ENTRENADOR</div>
       <div class="pb-notes"><div class="pb-blank"></div><div class="pb-blank"></div><div class="pb-blank"></div></div>
     `;
