@@ -772,7 +772,9 @@ const dState = {
   smoothCurves: false,                                // rutas con curvas suaves
   showDepths: false,                                  // etiquetas de profundidad en endpoints
   drag: null,                                         // { player, type, index } durante arrastre
-  anim: { running: false, progress: 1, raf: null }    // estado de animación (progress 0..1)
+  anim: { running: false, progress: 1, raf: null },   // estado de animación (progress 0..1)
+  customPos: {},                                      // posición custom de jugadores ofensivos {X:{x,y},...}
+  customDef: {}                                       // posición custom de defensores {coverKey:{idx:{x,y}}}
 };
 
 const D_GRID = 15; // tamaño de celda de la cuadrícula (1.5y)
@@ -841,6 +843,10 @@ function dRouteFrac()  { return Math.max(0, Math.min(1, (dState.anim.progress - 
 function dYToYards(y) { return Math.max(0, Math.round((D_FIELD.losY - y) / 10)); }
 function dGetEnd(p) { const r = dState.routes[p]; return (!r || r.length === 0) ? null : r[r.length - 1]; }
 function dGetStart(p) {
+  // Posición custom (arrastrada por el usuario) tiene prioridad — guardada absoluta
+  if (dState.customPos && dState.customPos[p]) {
+    return { x: dState.customPos[p].x, y: dState.customPos[p].y };
+  }
   const pos = (p === 'QB') ? D_FORMATIONS[dState.formation].QB : D_FORMATIONS[dState.formation][p];
   return dState.mirror ? { x: 600 - pos.x, y: pos.y } : pos;
 }
@@ -872,6 +878,14 @@ function dFlipRoutes() {
   ['X','H','Y','C','QB'].forEach(p => {
     dState.routes[p] = (dState.routes[p] || []).map(pt => ({ x: 600 - pt.x, y: pt.y }));
     dState.motions[p] = (dState.motions[p] || []).map(pt => ({ x: 600 - pt.x, y: pt.y }));
+    if (dState.customPos[p]) dState.customPos[p] = { x: 600 - dState.customPos[p].x, y: dState.customPos[p].y };
+  });
+  // refleja también los defensores custom
+  Object.keys(dState.customDef).forEach(ck => {
+    Object.keys(dState.customDef[ck]).forEach(i => {
+      const d = dState.customDef[ck][i];
+      dState.customDef[ck][i] = { x: 600 - d.x, y: d.y };
+    });
   });
 }
 function dGetSide(point) { return point && point.x < 300 ? 'L' : 'R'; }
@@ -1166,14 +1180,18 @@ const D_COVERAGES = {
   }
 };
 
-// Aplica mirror horizontal a los defensores si el lado fuerte detectado es L
-function dCoverageDefenders(cov) {
-  if (!cov.adaptStrong) return cov.defenders;
-  const ss = dStrongSide();
-  if (ss === 'L') {
-    return cov.defenders.map(d => d.type === 'blitz' ? d : ({ ...d, x: 600 - d.x }));
+// Defensores de una cobertura: aplica mirror (adaptStrong) + posiciones custom del usuario
+function dCoverageDefenders(cov, covKey) {
+  let defs = cov.defenders;
+  if (cov.adaptStrong) {
+    const ss = dStrongSide();
+    if (ss === 'L') defs = defs.map(d => d.type === 'blitz' ? d : ({ ...d, x: 600 - d.x }));
   }
-  return cov.defenders;
+  const cd = covKey && dState.customDef[covKey];
+  if (cd) {
+    defs = defs.map((d, i) => (cd[i] && d.type !== 'man') ? { ...d, x: cd[i].x, y: cd[i].y } : d);
+  }
+  return defs;
 }
 
 // ==================== COVERAGE SIMULATION ====================
@@ -1186,7 +1204,7 @@ function simulateCoverage(covKey) {
   const players = dActiveReceivers();
   if (players.length === 0) return { open: [], covered: [], total: 0, coveredBy: {}, conflicts: [] };
 
-  const defenders = dCoverageDefenders(cov);
+  const defenders = dCoverageDefenders(cov, covKey);
   const manDefenders = defenders.filter(d => d.type === 'man');
   const zoneDefenders = defenders.filter(d => d.type === 'zone');
 
@@ -1419,14 +1437,18 @@ function dRender() {
     dField.appendChild(lbl);
   }
 
+  const animOn = dState.anim.running;
+
   // Defensa (opcional)
   if (dState.showDefense) {
     const cov = D_COVERAGES[dState.selectedCoverage];
-    const defenders = dCoverageDefenders(cov);
+    const covKey = dState.selectedCoverage;
+    const defenders = dCoverageDefenders(cov, covKey);
     const players = dGetActivePlayers();
     const manDefenders = defenders.filter(d => d.type === 'man');
-    // dibujar zonas defensivas
-    defenders.filter(d => d.type === 'zone').forEach(d => {
+    // dibujar zonas defensivas (arrastrables: puedes reubicar cada defensor)
+    defenders.forEach((d, defIdx) => {
+      if (d.type !== 'zone') return;
       const c = document.createElementNS(ns, 'circle');
       c.setAttribute('cx', d.x); c.setAttribute('cy', d.y); c.setAttribute('r', d.radius);
       c.setAttribute('fill', '#3b82f6'); c.setAttribute('fill-opacity', '0.10');
@@ -1438,12 +1460,19 @@ function dRender() {
       tri.setAttribute('points', `${d.x-11},${d.y-7} ${d.x+11},${d.y-7} ${d.x},${d.y+10}`);
       tri.setAttribute('fill', '#3b82f6'); tri.setAttribute('stroke', '#000'); tri.setAttribute('stroke-width', '1.5');
       tri.setAttribute('stroke-linejoin', 'round');
+      if (!animOn) {
+        tri.style.cursor = 'grab';
+        tri.setAttribute('data-drag-type', 'defender');
+        tri.setAttribute('data-drag-cov', covKey);
+        tri.setAttribute('data-drag-defidx', defIdx);
+      }
       dField.appendChild(tri);
       const lbl = document.createElementNS(ns, 'text');
       lbl.setAttribute('x', d.x); lbl.setAttribute('y', d.y + 2);
       lbl.setAttribute('fill', '#fff'); lbl.setAttribute('font-size', '8');
       lbl.setAttribute('font-weight', '900'); lbl.setAttribute('text-anchor', 'middle');
       lbl.setAttribute('font-family', 'Helvetica Neue, Arial Black, sans-serif');
+      lbl.style.pointerEvents = 'none';
       lbl.textContent = d.label;
       dField.appendChild(lbl);
     });
@@ -1530,7 +1559,6 @@ function dRender() {
 
   // MOTIONS (movimiento pre-snap) — línea punteada con guiones largos
   const allPlayers = dQBIsReceiver() ? ['X','H','Y','C','QB'] : ['X','H','Y','C'];
-  const animOn = dState.anim.running;
   allPlayers.forEach(p => {
     const motion = dState.motions[p];
     if (!motion || motion.length === 0) return;
@@ -1647,20 +1675,23 @@ function dRender() {
     }
   });
 
-  // Players (clickeables para seleccionar quién diseña ruta)
+  // Players (arrastrables para reubicar · tap para seleccionar quién diseña ruta)
   ['X','H','Y','C'].forEach(p => {
     const pos = dGetStart(p);
     const isSel = dState.selectedPlayer === p;
     const isPasser = dIsSecondPasser(p);
     const g = document.createElementNS(ns, 'g');
-    g.style.cursor = 'pointer';
-    g.setAttribute('data-player-marker', p);
     const c = document.createElementNS(ns, 'circle');
     c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y);
     c.setAttribute('r', isSel ? 17 : 15);
     c.setAttribute('fill', D_COLORS[p]);
     c.setAttribute('stroke', isSel ? '#fff' : (isPasser ? '#fbbf24' : '#000'));
     c.setAttribute('stroke-width', isSel ? 3 : (isPasser ? 3 : 2));
+    if (!animOn) {
+      c.style.cursor = 'grab';
+      c.setAttribute('data-drag-player', p);
+      c.setAttribute('data-drag-type', 'player');
+    }
     g.appendChild(c);
     // Badge "P" (pasador secundario)
     if (isPasser) {
@@ -1686,27 +1717,25 @@ function dRender() {
     t.style.pointerEvents = 'none';
     t.textContent = p;
     g.appendChild(t);
-    g.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      dState.selectedPlayer = p;
-      document.querySelectorAll('[data-d-player]').forEach(b => b.classList.toggle('active', b.dataset.dPlayer === p));
-      dRender(); dUpdatePlayersList(); dUpdateHint();
-    });
     dField.appendChild(g);
   });
 
-  // QB — clickeable como receptor cuando es receptor (doble QB o snap a otro jugador)
+  // QB — arrastrable siempre · seleccionable cuando es receptor
   const qb = dGetQB();
   const qbReceiver = dQBIsReceiver();
   const qbSel = qbReceiver && dState.selectedPlayer === 'QB';
   const qbG = document.createElementNS(ns, 'g');
-  if (qbReceiver) qbG.style.cursor = 'pointer';
   const qbR = document.createElementNS(ns, 'rect');
   qbR.setAttribute('x', qb.x - 14); qbR.setAttribute('y', qb.y - 11);
   qbR.setAttribute('width', 28); qbR.setAttribute('height', 22); qbR.setAttribute('rx', 3);
   qbR.setAttribute('fill', D_QB_COLOR);
   qbR.setAttribute('stroke', qbSel ? '#fff' : '#000');
   qbR.setAttribute('stroke-width', qbSel ? 3 : 2);
+  if (!animOn) {
+    qbR.style.cursor = 'grab';
+    qbR.setAttribute('data-drag-player', 'QB');
+    qbR.setAttribute('data-drag-type', 'player');
+  }
   qbG.appendChild(qbR);
   const qbT = document.createElementNS(ns, 'text');
   qbT.setAttribute('x', qb.x); qbT.setAttribute('y', qb.y + 5);
@@ -1716,14 +1745,6 @@ function dRender() {
   qbT.style.pointerEvents = 'none';
   qbT.textContent = 'QB';
   qbG.appendChild(qbT);
-  if (qbReceiver) {
-    qbG.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      dState.selectedPlayer = 'QB';
-      document.querySelectorAll('[data-d-player]').forEach(b => b.classList.toggle('active', b.dataset.dPlayer === 'QB'));
-      dRender(); dUpdatePlayersList(); dUpdateHint();
-    });
-  }
   dField.appendChild(qbG);
 }
 
@@ -1738,52 +1759,80 @@ function dPushHistory() {
   dState.history.push({
     routes: JSON.parse(JSON.stringify(dState.routes)),
     motions: JSON.parse(JSON.stringify(dState.motions)),
+    customPos: JSON.parse(JSON.stringify(dState.customPos || {})),
+    customDef: JSON.parse(JSON.stringify(dState.customDef || {})),
     mirror: dState.mirror,
     snapTo: dState.snapTo,
     secondPasser: dState.secondPasser
   });
   if (dState.history.length > 50) dState.history.shift();
 }
-// --- ARRASTRE de puntos existentes ---
+// --- ARRASTRE de piezas y puntos ---
 let dDragMoved = false;
 dField.addEventListener('pointerdown', (e) => {
   const t = e.target;
-  if (t && t.hasAttribute && t.hasAttribute('data-drag-player')) {
-    dState.drag = {
-      player: t.getAttribute('data-drag-player'),
-      type: t.getAttribute('data-drag-type'),
-      index: parseInt(t.getAttribute('data-drag-index'), 10)
-    };
-    dDragMoved = false;
-    dPushHistory();
-    e.preventDefault();
-    try { dField.setPointerCapture(e.pointerId); } catch(_) {}
+  if (!t || !t.getAttribute) return;
+  const dt = t.getAttribute('data-drag-type');
+  if (dt === 'route' || dt === 'motion') {
+    dState.drag = { type: dt, player: t.getAttribute('data-drag-player'), index: parseInt(t.getAttribute('data-drag-index'), 10) };
+  } else if (dt === 'player') {
+    dState.drag = { type: 'player', player: t.getAttribute('data-drag-player') };
+  } else if (dt === 'defender') {
+    dState.drag = { type: 'defender', cov: t.getAttribute('data-drag-cov'), index: parseInt(t.getAttribute('data-drag-defidx'), 10) };
+  } else {
+    return;
   }
+  dDragMoved = false;
+  dPushHistory();
+  e.preventDefault();
+  try { dField.setPointerCapture(e.pointerId); } catch(_) {}
 });
 dField.addEventListener('pointermove', (e) => {
   if (!dState.drag) return;
   let pt = dSnapPoint(dGetSvgPoint(e));
-  pt.x = Math.max(20, Math.min(580, pt.x));
-  pt.y = Math.max(20, Math.min(345, pt.y));
-  const arr = dState.drag.type === 'motion' ? dState.motions[dState.drag.player] : dState.routes[dState.drag.player];
-  if (arr && arr[dState.drag.index]) {
-    arr[dState.drag.index] = pt;
-    dDragMoved = true;
-    dRender();
+  const dg = dState.drag;
+  if (dg.type === 'route' || dg.type === 'motion') {
+    pt.x = Math.max(20, Math.min(580, pt.x));
+    pt.y = Math.max(20, Math.min(345, pt.y));
+    const arr = dg.type === 'motion' ? dState.motions[dg.player] : dState.routes[dg.player];
+    if (arr && arr[dg.index]) { arr[dg.index] = pt; dDragMoved = true; dRender(); }
+  } else if (dg.type === 'player') {
+    // jugador ofensivo: se puede reubicar en/detrás de la LDE para armar formaciones
+    pt.x = Math.max(30, Math.min(570, pt.x));
+    pt.y = Math.max(150, Math.min(295, pt.y));
+    dState.customPos[dg.player] = { x: pt.x, y: pt.y };
+    dDragMoved = true; dRender();
+  } else if (dg.type === 'defender') {
+    pt.x = Math.max(25, Math.min(575, pt.x));
+    pt.y = Math.max(25, Math.min(300, pt.y));
+    if (!dState.customDef[dg.cov]) dState.customDef[dg.cov] = {};
+    dState.customDef[dg.cov][dg.index] = { x: pt.x, y: pt.y };
+    dDragMoved = true; dRender();
   }
 });
 dField.addEventListener('pointerup', (e) => {
   if (dState.drag) {
+    const dg = dState.drag;
     dState.drag = null;
-    if (dDragMoved) dValidateAll();
+    // jugador: tap sin mover = seleccionar
+    if (dg.type === 'player' && !dDragMoved) {
+      const p = dg.player;
+      if (p !== 'QB' || dQBIsReceiver()) {
+        dState.selectedPlayer = p;
+        document.querySelectorAll('[data-d-player]').forEach(b => b.classList.toggle('active', b.dataset.dPlayer === p));
+        dRender(); dUpdatePlayersList(); dUpdateHint();
+      }
+    } else if (dDragMoved) {
+      dValidateAll();
+    }
     try { dField.releasePointerCapture(e.pointerId); } catch(_) {}
   }
 });
 
 dField.addEventListener('click', (e) => {
-  // Si se acaba de arrastrar un punto, no agregar uno nuevo
+  // Si se acaba de arrastrar una pieza, no agregar un punto nuevo
   if (dDragMoved) { dDragMoved = false; return; }
-  if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-drag-player')) return;
+  if (e.target && e.target.getAttribute && e.target.getAttribute('data-drag-type')) return;
   if (dState.anim.running) return; // sin edición durante animación
   let pt = dGetSvgPoint(e);
   pt = dSnapPoint(pt); // snap-to-grid si está activo
@@ -2251,7 +2300,9 @@ function dPersistAuto() {
       snapTo: dState.snapTo,
       snapGrid: dState.snapGrid,
       smoothCurves: dState.smoothCurves,
-      showDepths: dState.showDepths
+      showDepths: dState.showDepths,
+      customPos: dState.customPos,
+      customDef: dState.customDef
     }));
   } catch (_) {}
 }
@@ -2279,6 +2330,8 @@ function dLoadAuto() {
     if (typeof s.snapGrid === 'boolean') dState.snapGrid = s.snapGrid;
     if (typeof s.smoothCurves === 'boolean') dState.smoothCurves = s.smoothCurves;
     if (typeof s.showDepths === 'boolean') dState.showDepths = s.showDepths;
+    if (s.customPos) dState.customPos = s.customPos;
+    if (s.customDef) dState.customDef = s.customDef;
   } catch (_) {}
 }
 function dGetSaved() {
@@ -2297,6 +2350,8 @@ function dSavePlay() {
     formation: dState.formation,
     routes: JSON.parse(JSON.stringify(dState.routes)),
     motions: JSON.parse(JSON.stringify(dState.motions)),
+    customPos: JSON.parse(JSON.stringify(dState.customPos || {})),
+    customDef: JSON.parse(JSON.stringify(dState.customDef || {})),
     concepts: { ...dState.concepts },
     mirror: dState.mirror,
     snapTo: dState.snapTo,
@@ -2319,6 +2374,8 @@ function dLoadPlay(id) {
   if (!dState.routes.QB) dState.routes.QB = [];
   dState.motions = item.motions ? JSON.parse(JSON.stringify(item.motions)) : { X:[], H:[], Y:[], C:[], QB:[] };
   if (!dState.motions.QB) dState.motions.QB = [];
+  dState.customPos = item.customPos ? JSON.parse(JSON.stringify(item.customPos)) : {};
+  dState.customDef = item.customDef ? JSON.parse(JSON.stringify(item.customDef)) : {};
   dState.concepts = { ...item.concepts };
   if (typeof item.mirror === 'boolean') dState.mirror = item.mirror;
   if (item.snapTo) dState.snapTo = item.snapTo;
@@ -2369,7 +2426,9 @@ document.querySelectorAll('[data-d-formation]').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('[data-d-formation]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    dPushHistory();
     dState.formation = btn.dataset.dFormation;
+    dState.customPos = {}; // la formación elegida define las posiciones base
     dValidateAll();
   });
 });
@@ -2495,6 +2554,8 @@ document.getElementById('d-undo-btn').addEventListener('click', () => {
   if (snap && snap.routes) {
     dState.routes = snap.routes;
     if (snap.motions) dState.motions = snap.motions;
+    if (snap.customPos) dState.customPos = snap.customPos;
+    if (snap.customDef) dState.customDef = snap.customDef;
     if (typeof snap.mirror === 'boolean') dState.mirror = snap.mirror;
     if (snap.snapTo) dState.snapTo = snap.snapTo;
     if (snap.secondPasser) dState.secondPasser = snap.secondPasser;
@@ -2512,6 +2573,8 @@ document.getElementById('d-clear-btn').addEventListener('click', () => {
   dPushHistory();
   dState.routes = { X: [], H: [], Y: [], C: [], QB: [] };
   dState.motions = { X: [], H: [], Y: [], C: [], QB: [] };
+  dState.customPos = {};   // vuelve a la formación base
+  dState.customDef = {};   // vuelve a las posiciones defensivas base
   dValidateAll();
 });
 document.getElementById('d-save-btn').addEventListener('click', dSavePlay);
@@ -2527,6 +2590,8 @@ document.getElementById('d-export-btn').addEventListener('click', () => {
       formation: dState.formation,
       routes: dState.routes,
       motions: dState.motions,
+      customPos: dState.customPos,
+      customDef: dState.customDef,
       concepts: dState.concepts,
       mirror: dState.mirror,
       snapTo: dState.snapTo,
@@ -2566,6 +2631,8 @@ document.getElementById('d-import-file').addEventListener('change', (e) => {
           dState.motions = { X:[], H:[], Y:[], C:[], QB:[] };
           Object.assign(dState.motions, data.current.motions);
         }
+        dState.customPos = data.current.customPos || {};
+        dState.customDef = data.current.customDef || {};
         if (data.current.concepts) dState.concepts = data.current.concepts;
         if (typeof data.current.mirror === 'boolean') dState.mirror = data.current.mirror;
         if (data.current.snapTo) dState.snapTo = data.current.snapTo;
@@ -2625,6 +2692,10 @@ const wbState = {
 
 // Posición inicial de un jugador para un objeto de jugada guardada
 function wbStart(play, p) {
+  // posición custom (arrastrada) guardada con la jugada tiene prioridad
+  if (play.customPos && play.customPos[p]) {
+    return { x: play.customPos[p].x, y: play.customPos[p].y };
+  }
   const form = D_FORMATIONS[play.formation] || D_FORMATIONS['2x1'];
   const pos = (p === 'QB') ? form.QB : form[p];
   if (!pos) return null;
@@ -2886,12 +2957,14 @@ function dEvalPlay(play) {
   const snap = {
     routes: dState.routes, motions: dState.motions, formation: dState.formation,
     mirror: dState.mirror, snapTo: dState.snapTo, doubleQB: dState.doubleQB,
-    secondPasser: dState.secondPasser
+    secondPasser: dState.secondPasser, customPos: dState.customPos, customDef: dState.customDef
   };
   dState.routes = play.routes ? JSON.parse(JSON.stringify(play.routes)) : {X:[],H:[],Y:[],C:[],QB:[]};
   if (!dState.routes.QB) dState.routes.QB = [];
   dState.motions = play.motions ? JSON.parse(JSON.stringify(play.motions)) : {X:[],H:[],Y:[],C:[],QB:[]};
   if (!dState.motions.QB) dState.motions.QB = [];
+  dState.customPos = play.customPos ? JSON.parse(JSON.stringify(play.customPos)) : {};
+  dState.customDef = play.customDef ? JSON.parse(JSON.stringify(play.customDef)) : {};
   dState.formation = play.formation || '2x1';
   dState.mirror = !!play.mirror;
   dState.snapTo = play.snapTo || 'QB';
