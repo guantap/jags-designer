@@ -53,6 +53,13 @@
   .d-tool-btn.d-danger:hover{border-color:var(--accent-2);color:var(--accent-2)}
   .d-tool-btn.d-toggle.active{background:var(--accent-4);color:#fff;border-color:var(--accent-4)}
   .d-tool-btn.d-mode.active{background:var(--accent-3);color:#000;border-color:var(--accent-3)}
+  .d-tool-select{
+    background:var(--bg-2);border:1px solid var(--line);color:var(--ink);
+    padding:.5rem .55rem;border-radius:5px;cursor:pointer;
+    font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;font-weight:700;
+    font-size:.74rem;letter-spacing:.04em;text-transform:uppercase;
+  }
+  .d-tool-select:hover{border-color:var(--accent-4)}
 
   .d-canvas-wrap{position:relative;background:#0a0e15;border:1px solid var(--line);border-radius:6px;overflow:hidden;aspect-ratio:600 / 360;width:100%}
   #d-field{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;user-select:none;-webkit-user-select:none;touch-action:none}
@@ -434,6 +441,7 @@
         <button class="d-tool-btn d-toggle" id="d-toggle-depths">📏 PROFUNDIDAD</button>
         <button class="d-tool-btn d-toggle active" id="d-toggle-zones">👁 ZONAS</button>
         <button class="d-tool-btn d-toggle" id="d-toggle-defense">🛡 EMULAR DEFENSA</button>
+        <select class="d-tool-select" id="d-defense-select" title="Elige qué defensa emular"></select>
         <button class="d-tool-btn d-toggle" id="d-toggle-2qb">🏈 DOBLE QB</button>
       </div>
       <div class="d-tool-group">
@@ -1879,10 +1887,29 @@ function dPopulateCovList() {
     row.addEventListener('click', () => {
       dState.selectedCoverage = key;
       dPopulateCovList();
+      dSyncDefenseSelect();
       dRender();
     });
     list.appendChild(row);
   });
+}
+
+// Llena el dropdown de defensa de la toolbar
+function dPopulateDefenseSelect() {
+  const sel = document.getElementById('d-defense-select');
+  if (!sel) return;
+  sel.innerHTML = '';
+  Object.entries(D_COVERAGES).forEach(([key, c]) => {
+    const opt = document.createElement('option');
+    opt.value = key; opt.textContent = c.name;
+    if (key === dState.selectedCoverage) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+// Sincroniza el valor del dropdown con la cobertura seleccionada
+function dSyncDefenseSelect() {
+  const sel = document.getElementById('d-defense-select');
+  if (sel) sel.value = dState.selectedCoverage;
 }
 
 function dPopulateRouteLib() {
@@ -2370,6 +2397,14 @@ document.getElementById('d-toggle-defense').addEventListener('click', (e) => {
   dState.showDefense = !dState.showDefense;
   e.currentTarget.classList.toggle('active', dState.showDefense);
   dRender();
+});
+document.getElementById('d-defense-select').addEventListener('change', (e) => {
+  dState.selectedCoverage = e.target.value;
+  // al elegir una defensa, enciende EMULAR DEFENSA para verla al instante
+  dState.showDefense = true;
+  document.getElementById('d-toggle-defense').classList.add('active');
+  dPopulateCovList();
+  dRender(); dValidateAll(); dPersistAuto();
 });
 document.getElementById('d-toggle-grid').addEventListener('click', (e) => {
   dState.snapGrid = !dState.snapGrid;
@@ -3137,6 +3172,7 @@ document.querySelectorAll('[data-d-snap]').forEach(b => b.classList.toggle('acti
 dRefreshPasserAvailability();
 dPopulateSelects();
 dPopulateCovList();
+dPopulateDefenseSelect();
 dPopulateRouteLib();
 dUpdateConceptInfo();
 dUpdateHint();
