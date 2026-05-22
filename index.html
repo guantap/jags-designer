@@ -196,11 +196,21 @@
   .d-check-side{font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.6rem;letter-spacing:.1em;color:var(--accent-4);padding:.1rem .35rem;border:1px solid var(--accent-4);border-radius:3px;margin-left:.4rem}
 
   .d-save-row{display:flex;gap:.4rem;flex-wrap:wrap}
-  .d-saved-list{margin-top:.6rem;display:flex;flex-direction:column;gap:.3rem;max-height:160px;overflow-y:auto}
-  .d-saved-item{display:flex;justify-content:space-between;align-items:center;padding:.4rem .6rem;background:var(--bg-2);border:1px solid var(--line);border-radius:4px;font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.72rem}
-  .d-saved-item span{flex:1;cursor:pointer;color:var(--ink-dim)}
-  .d-saved-item span:hover{color:var(--accent)}
-  .d-saved-item b{color:var(--ink);font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;letter-spacing:.05em;margin-right:.5rem;font-size:.8rem}
+  .d-saved-list{margin-top:.6rem;display:flex;flex-direction:column;gap:.3rem;max-height:220px;overflow-y:auto}
+  .d-saved-item{display:flex;align-items:center;gap:.4rem;padding:.4rem .6rem;background:var(--bg-2);border:1px solid var(--line);border-radius:4px;font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.72rem}
+  .d-saved-item .d-saved-main{flex:1;cursor:pointer;color:var(--ink-dim);min-width:0}
+  .d-saved-item .d-saved-main:hover{color:var(--accent)}
+  .d-saved-item b{color:var(--ink);font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;letter-spacing:.05em;font-size:.8rem;display:block}
+  .d-saved-cat{display:inline-block;font-size:.58rem;font-weight:700;letter-spacing:.06em;padding:.1rem .35rem;border-radius:3px;color:#06080d;text-transform:uppercase}
+  .d-saved-sit{color:var(--ink-faint);font-size:.62rem;letter-spacing:.04em}
+  .d-saved-edit{background:transparent;border:1px solid var(--line);color:var(--ink-faint);width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:.7rem;flex-shrink:0}
+  .d-saved-edit:hover{border-color:var(--accent-3);color:var(--accent-3)}
+  .d-meta-select{
+    background:var(--bg-2);border:1px solid var(--line);color:var(--ink);
+    padding:.4rem .5rem;border-radius:5px;cursor:pointer;
+    font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.7rem;
+  }
+  .d-meta-select:hover{border-color:var(--accent-3)}
 
   footer{margin-top:2rem;padding-top:1.2rem;border-top:1px solid var(--line);text-align:center;font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.7rem;color:var(--ink-faint);letter-spacing:.2em}
 
@@ -432,6 +442,7 @@
       </div>
       <div class="d-tool-group">
         <button class="d-tool-btn" id="d-anim-btn">▶ ANIMAR</button>
+        <button class="d-tool-btn" id="d-anim-reset-btn">↺ RESET</button>
         <button class="d-tool-btn" id="d-fs-btn" style="background:var(--accent);color:#000;border-color:var(--accent)">⛶ PANTALLA</button>
       </div>
       <div style="flex:1"></div>
@@ -534,6 +545,10 @@
         <input type="text" id="d-save-name" placeholder="Nombre de la jugada" style="flex:1;background:var(--bg-2);border:1px solid var(--line);color:var(--ink);padding:.5rem .6rem;border-radius:5px;font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.78rem">
         <button class="d-tool-btn" id="d-save-btn">💾 GUARDAR</button>
       </div>
+      <div class="d-save-row" style="margin-top:.4rem;gap:.4rem">
+        <select class="d-meta-select" id="d-save-cat" style="flex:1"></select>
+        <select class="d-meta-select" id="d-save-sit" style="flex:1"></select>
+      </div>
       <div class="d-save-row" style="margin-top:.5rem">
         <button class="d-tool-btn" id="d-export-btn" style="flex:1">⬇ EXPORTAR JSON</button>
         <button class="d-tool-btn" id="d-import-btn" style="flex:1">⬆ IMPORTAR JSON</button>
@@ -547,6 +562,10 @@
         <button class="d-tool-btn" id="d-playbook-btn" style="flex:1;justify-content:center">📖 PLAYBOOK</button>
       </div>
       <input type="file" id="d-import-file" accept="application/json" style="display:none">
+      <div class="d-save-row" style="margin-top:.6rem;align-items:center;gap:.4rem">
+        <span style="font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.65rem;color:var(--ink-faint);letter-spacing:.1em">FILTRAR</span>
+        <select class="d-meta-select" id="d-saved-filter" style="flex:1"></select>
+      </div>
       <div class="d-saved-list" id="d-saved-list"></div>
     </div>
 
@@ -632,6 +651,28 @@
           <div class="cmp-info" id="cmp-info-b"></div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL EDITAR JUGADA ================= -->
+<div class="wb-overlay" id="ed-overlay">
+  <div class="wb-modal" style="width:min(460px,100%)">
+    <div class="wb-modal-head">
+      <h2>EDITAR JUGADA</h2>
+      <button class="wb-x" id="ed-close">✕</button>
+    </div>
+    <div class="wb-modal-body" style="grid-template-columns:1fr">
+      <div class="wb-col">
+        <div class="wb-opt-row"><label>Nombre</label><input type="text" id="ed-name" class="cs-input"></div>
+        <div class="wb-opt-row"><label>Categoría</label><select class="d-meta-select" id="ed-cat" style="width:100%"></select></div>
+        <div class="wb-opt-row"><label>Situación</label><select class="d-meta-select" id="ed-sit" style="width:100%"></select></div>
+        <div class="wb-opt-row" style="align-items:flex-start"><label style="padding-top:.4rem">Notas</label><textarea id="ed-notes" class="cs-input" rows="4" style="width:100%;resize:vertical" placeholder="Puntos de coaching, ajustes, recordatorios…"></textarea></div>
+      </div>
+    </div>
+    <div class="wb-modal-foot">
+      <span class="wb-summary" id="ed-meta"></span>
+      <button class="wb-print-btn" id="ed-save">GUARDAR CAMBIOS</button>
     </div>
   </div>
 </div>
@@ -772,12 +813,34 @@ const dState = {
   smoothCurves: false,                                // rutas con curvas suaves
   showDepths: false,                                  // etiquetas de profundidad en endpoints
   drag: null,                                         // { player, type, index } durante arrastre
-  anim: { running: false, progress: 1, raf: null },   // estado de animación (progress 0..1)
+  anim: { running: false, ended: false, progress: 1, raf: null }, // estado de animación (ended = congelada en último frame)
   customPos: {},                                      // posición custom de jugadores ofensivos {X:{x,y},...}
   customDef: {}                                       // posición custom de defensores {coverKey:{idx:{x,y}}}
 };
 
 const D_GRID = 15; // tamaño de celda de la cuadrícula (1.5y)
+
+// ==================== ORGANIZACIÓN DEL PLAYBOOK ====================
+// Categorías con color de chip
+const D_CATEGORIES = [
+  { id:'corto',      name:'Corto',      color:'#00e5ff' },
+  { id:'intermedio', name:'Intermedio', color:'#ffd23f' },
+  { id:'profundo',   name:'Profundo',   color:'#7c4dff' },
+  { id:'doubleqb',   name:'Doble QB',   color:'#dc2626' },
+  { id:'trick',      name:'Trick',      color:'#27e08a' },
+  { id:'redzone',    name:'Red Zone',   color:'#ff3b6b' },
+  { id:'critico',    name:'Crítico',    color:'#f97316' }
+];
+// Situaciones de uso (down & distance)
+const D_SITUATIONS = [
+  '1er down', '2do & corto', '2do & largo', '3ro & corto',
+  '3ro & largo', '4to down', 'Dos minutos', 'Goal line'
+];
+function dCatById(id) { return D_CATEGORIES.find(c => c.id === id) || null; }
+function dCatChipHTML(catId) {
+  const c = dCatById(catId);
+  return c ? `<span class="d-saved-cat" style="background:${c.color};margin-right:.35rem">${c.name}</span>` : '';
+}
 
 // ==================== BIBLIOTECA DE RUTAS ====================
 // Cada preset: (start, dirIn) => array de puntos. dirIn = +1 si el centro está a la derecha.
@@ -841,7 +904,7 @@ function dRouteFrac()  { return Math.max(0, Math.min(1, (dState.anim.progress - 
 // Posición de un jugador AHORA durante la animación (motion → ruta)
 function dPlayerAnimPos(p) {
   const start = dGetStart(p);
-  if (!dState.anim.running) return start;
+  if (!dState.anim.running && !dState.anim.ended) return start;
   const motion = dState.motions[p] || [];
   const route = dState.routes[p] || [];
   const rf = dRouteFrac();
@@ -1459,7 +1522,7 @@ function dRender() {
     dField.appendChild(lbl);
   }
 
-  const animOn = dState.anim.running;
+  const animOn = dState.anim.running || dState.anim.ended;
 
   // Defensa (opcional)
   if (dState.showDefense) {
@@ -1880,7 +1943,7 @@ dField.addEventListener('click', (e) => {
   // Si se acaba de arrastrar una pieza, no agregar un punto nuevo
   if (dDragMoved) { dDragMoved = false; return; }
   if (e.target && e.target.getAttribute && e.target.getAttribute('data-drag-type')) return;
-  if (dState.anim.running) return; // sin edición durante animación
+  if (dState.anim.running || dState.anim.ended) return; // sin edición con la animación congelada
   let pt = dGetSvgPoint(e);
   pt = dSnapPoint(pt); // snap-to-grid si está activo
   const sp = dState.selectedPlayer;
@@ -1918,6 +1981,7 @@ function dApplyRoutePreset(key) {
 function dPlayAnimation() {
   if (dState.anim.running) return;
   dState.anim.running = true;
+  dState.anim.ended = false;
   dState.anim.progress = 0;
   const btn = document.getElementById('d-anim-btn');
   if (btn) btn.textContent = '⏸ ANIMANDO';
@@ -1929,13 +1993,27 @@ function dPlayAnimation() {
     if (dState.anim.progress < 1) {
       dState.anim.raf = requestAnimationFrame(frame);
     } else {
+      // se queda CONGELADA en el último frame (jugada desarrollada)
       dState.anim.running = false;
+      dState.anim.ended = true;
       dState.anim.progress = 1;
-      if (btn) btn.textContent = '▶ ANIMAR';
+      if (btn) btn.textContent = '▶ REPETIR';
       dRender();
+      dUpdateHint();
     }
   }
   dState.anim.raf = requestAnimationFrame(frame);
+}
+// Reset: descongela la animación y devuelve las piezas a su posición inicial
+function dResetAnimation() {
+  if (dState.anim.raf) cancelAnimationFrame(dState.anim.raf);
+  dState.anim.running = false;
+  dState.anim.ended = false;
+  dState.anim.progress = 1;
+  const btn = document.getElementById('d-anim-btn');
+  if (btn) btn.textContent = '▶ ANIMAR';
+  dRender();
+  dUpdateHint();
 }
 
 // ==================== UI WIRING ====================
@@ -2074,6 +2152,10 @@ function dUpdatePlayersList() {
 function dUpdateHint() {
   const hint = document.getElementById('d-hint');
   const sp = dState.selectedPlayer;
+  if (dState.anim.ended) {
+    hint.textContent = 'Animación congelada en el último frame · pulsa ↺ RESET para reposicionar las piezas y editar';
+    return;
+  }
   if (dState.drawMode === 'motion') {
     hint.textContent = `MOTION · ${sp} · clickea el movimiento pre-snap · la ruta arrancará desde el final del motion`;
   } else if (dIsSecondPasser(sp)) {
@@ -2404,6 +2486,9 @@ function dSavePlay() {
     snapTo: dState.snapTo,
     doubleQB: dState.doubleQB,
     secondPasser: dState.secondPasser,
+    category: document.getElementById('d-save-cat').value || '',
+    situation: document.getElementById('d-save-sit').value || '',
+    notes: '',
     ts: new Date().toISOString()
   });
   // límite 30 jugadas
@@ -2416,6 +2501,7 @@ function dLoadPlay(id) {
   const arr = dGetSaved();
   const item = arr.find(x => x.id === id);
   if (!item) return;
+  dState.anim.ended = false; // descongela si venías de una animación
   dState.formation = item.formation;
   dState.routes = JSON.parse(JSON.stringify(item.routes));
   if (!dState.routes.QB) dState.routes.QB = [];
@@ -2446,18 +2532,77 @@ function dDeletePlay(id) {
   dSetSaved(dGetSaved().filter(x => x.id !== id));
   dRenderSavedList();
 }
+let dSavedFilter = ''; // categoría activa del filtro ('' = todas)
 function dRenderSavedList() {
   const list = document.getElementById('d-saved-list');
   list.innerHTML = '';
-  dGetSaved().forEach(item => {
+  let plays = dGetSaved();
+  if (dSavedFilter) plays = plays.filter(p => (p.category || '') === dSavedFilter);
+  if (plays.length === 0) {
+    list.innerHTML = `<div style="padding:.6rem;text-align:center;color:var(--ink-faint);font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.68rem">${dGetSaved().length === 0 ? 'Sin jugadas guardadas' : 'Ninguna jugada en esta categoría'}</div>`;
+    return;
+  }
+  plays.forEach(item => {
     const row = document.createElement('div');
     row.className = 'd-saved-item';
     const concepts = item.concepts.strong + (item.concepts.weak ? ' + ' + item.concepts.weak.replace('concept:', '') : '');
-    row.innerHTML = `<span><b>${item.name}</b>${concepts}</span><button class="d-player-clear" data-del="${item.id}">✕</button>`;
-    row.querySelector('span').addEventListener('click', () => dLoadPlay(item.id));
+    const cat = dCatById(item.category);
+    const catChip = cat ? `<span class="d-saved-cat" style="background:${cat.color}">${cat.name}</span> ` : '';
+    const sit = item.situation ? `<span class="d-saved-sit"> · ${item.situation}</span>` : '';
+    const noteMark = item.notes ? ' 📝' : '';
+    row.innerHTML = `
+      <div class="d-saved-main"><b>${item.name}${noteMark}</b>${catChip}<span style="color:var(--ink-faint)">${concepts}</span>${sit}</div>
+      <button class="d-saved-edit" data-edit="${item.id}" title="Editar">✎</button>
+      <button class="d-player-clear" data-del="${item.id}" title="Eliminar">✕</button>`;
+    row.querySelector('.d-saved-main').addEventListener('click', () => dLoadPlay(item.id));
+    row.querySelector('[data-edit]').addEventListener('click', (e) => { e.stopPropagation(); dOpenEditPlay(item.id); });
     row.querySelector('[data-del]').addEventListener('click', (e) => { e.stopPropagation(); dDeletePlay(item.id); });
     list.appendChild(row);
   });
+}
+
+// ---- Poblar selectores de metadatos ----
+function dPopulateMetaSelects() {
+  const catOpts = '<option value="">— Sin categoría —</option>' +
+    D_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  const sitOpts = '<option value="">— Sin situación —</option>' +
+    D_SITUATIONS.map(s => `<option value="${s}">${s}</option>`).join('');
+  document.getElementById('d-save-cat').innerHTML = catOpts;
+  document.getElementById('d-save-sit').innerHTML = sitOpts;
+  document.getElementById('ed-cat').innerHTML = catOpts;
+  document.getElementById('ed-sit').innerHTML = sitOpts;
+  document.getElementById('d-saved-filter').innerHTML =
+    '<option value="">Todas las categorías</option>' +
+    D_CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+}
+
+// ---- Modal editar jugada ----
+let dEditingId = null;
+function dOpenEditPlay(id) {
+  const item = dGetSaved().find(x => x.id === id);
+  if (!item) return;
+  dEditingId = id;
+  document.getElementById('ed-name').value = item.name || '';
+  document.getElementById('ed-cat').value = item.category || '';
+  document.getElementById('ed-sit').value = item.situation || '';
+  document.getElementById('ed-notes').value = item.notes || '';
+  document.getElementById('ed-meta').textContent = 'Guardada: ' + (item.ts ? new Date(item.ts).toLocaleDateString() : '—');
+  document.getElementById('ed-overlay').classList.add('open');
+}
+function dSaveEditPlay() {
+  if (dEditingId == null) return;
+  const arr = dGetSaved();
+  const item = arr.find(x => x.id === dEditingId);
+  if (item) {
+    item.name = (document.getElementById('ed-name').value || '').trim() || 'Sin nombre';
+    item.category = document.getElementById('ed-cat').value || '';
+    item.situation = document.getElementById('ed-sit').value || '';
+    item.notes = (document.getElementById('ed-notes').value || '').trim();
+    dSetSaved(arr);
+  }
+  document.getElementById('ed-overlay').classList.remove('open');
+  dEditingId = null;
+  dRenderSavedList();
 }
 
 // ==================== EVENT WIRING ====================
@@ -2528,6 +2673,7 @@ document.getElementById('d-toggle-depths').addEventListener('click', (e) => {
   dRender(); dPersistAuto();
 });
 document.getElementById('d-anim-btn').addEventListener('click', dPlayAnimation);
+document.getElementById('d-anim-reset-btn').addEventListener('click', dResetAnimation);
 document.getElementById('d-mode-route').addEventListener('click', () => {
   dState.drawMode = 'route';
   document.getElementById('d-mode-route').classList.add('active');
@@ -2628,6 +2774,19 @@ document.getElementById('d-save-btn').addEventListener('click', dSavePlay);
 document.getElementById('d-save-name').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') dSavePlay();
 });
+// Filtro por categoría de la librería
+document.getElementById('d-saved-filter').addEventListener('change', (e) => {
+  dSavedFilter = e.target.value;
+  dRenderSavedList();
+});
+// Modal editar jugada
+document.getElementById('ed-close').addEventListener('click', () => {
+  document.getElementById('ed-overlay').classList.remove('open'); dEditingId = null;
+});
+document.getElementById('ed-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'ed-overlay') { e.currentTarget.classList.remove('open'); dEditingId = null; }
+});
+document.getElementById('ed-save').addEventListener('click', dSaveEditPlay);
 // EXPORT: descarga toda la jugada actual + librería como JSON
 document.getElementById('d-export-btn').addEventListener('click', () => {
   const payload = {
@@ -2895,7 +3054,7 @@ function wbRenderPlays() {
     const meta = pl.concepts ? pl.concepts.strong + (pl.doubleQB ? ' · 2QB' : '') : '';
     const item = document.createElement('div');
     item.className = 'wb-play-item' + (sel ? ' sel' : '');
-    item.innerHTML = `<div class="wb-play-check">${sel ? '✓' : ''}</div><div class="wb-play-name">${pl.name || 'Sin nombre'}</div><div class="wb-play-meta">${meta}</div>`;
+    item.innerHTML = `<div class="wb-play-check">${sel ? '✓' : ''}</div><div class="wb-play-name">${dCatChipHTML(pl.category)}${pl.name || 'Sin nombre'}</div><div class="wb-play-meta">${meta}</div>`;
     item.addEventListener('click', () => {
       if (wbState.selected.has(pl.id)) wbState.selected.delete(pl.id);
       else wbState.selected.add(pl.id);
@@ -3130,7 +3289,7 @@ function csRenderPlays() {
     const item = document.createElement('div');
     item.className = 'wb-play-item' + (sel ? ' sel' : '');
     const meta = pl.concepts ? pl.concepts.strong : '';
-    item.innerHTML = `<div class="wb-play-check">${sel ? (order+1) : ''}</div><div class="wb-play-name">${pl.name || 'Sin nombre'}</div><div class="wb-play-meta">${meta}</div>`;
+    item.innerHTML = `<div class="wb-play-check">${sel ? (order+1) : ''}</div><div class="wb-play-name">${dCatChipHTML(pl.category)}${pl.name || 'Sin nombre'}</div><div class="wb-play-meta">${meta}</div>`;
     item.addEventListener('click', () => {
       const idx = csState.selected.indexOf(pl.id);
       if (idx >= 0) csState.selected.splice(idx, 1);
@@ -3186,16 +3345,24 @@ function pbBuildPages() {
     });
     const page = document.createElement('div');
     page.className = 'pb-page';
+    const catObj = dCatById(pl.category);
+    const tags = [
+      catObj ? catObj.name.toUpperCase() : null,
+      pl.situation || null
+    ].filter(Boolean).join(' · ');
+    const notesHTML = pl.notes
+      ? `<div class="pb-notes">${pl.notes.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`
+      : '<div class="pb-notes"><div class="pb-blank"></div><div class="pb-blank"></div><div class="pb-blank"></div></div>';
     page.innerHTML = `
       <div class="pb-title">#${i+1} · ${pl.name || 'Sin nombre'}</div>
-      <div class="pb-sub">Concepto: ${concept.toUpperCase()} · Formación: ${(pl.formation||'2x1').toUpperCase()}${pl.doubleQB?' · DOBLE QB':''}${pl.mirror?' · ESPEJO':''} · Vence ${ev.pass}/${ev.total} coberturas</div>
+      <div class="pb-sub">${tags ? tags + ' · ' : ''}Concepto: ${concept.toUpperCase()} · Formación: ${(pl.formation||'2x1').toUpperCase()}${pl.doubleQB?' · DOBLE QB':''}${pl.mirror?' · ESPEJO':''} · Vence ${ev.pass}/${ev.total} coberturas</div>
       <div class="pb-diagram">${wbPlaySVG(pl, 600+i, {routeWeight:'medium', zones:true, depths:true, labelMode:'none'})}</div>
       <div class="pb-h">SIMULADOR VS COBERTURAS · QUIÉN QUEDA LIBRE</div>
       <table class="pb-cov-table"><tbody>${covRows}</tbody></table>
       <div class="pb-h">ANÁLISIS DE LA JUGADA</div>
       <div class="pb-notes pb-narrative">${ev.narrative}</div>
       <div class="pb-h">NOTAS DEL ENTRENADOR</div>
-      <div class="pb-notes"><div class="pb-blank"></div><div class="pb-blank"></div><div class="pb-blank"></div></div>
+      ${notesHTML}
     `;
     area.appendChild(page);
   });
@@ -3211,7 +3378,7 @@ function pbRenderPlays() {
     const item = document.createElement('div');
     item.className = 'wb-play-item' + (sel ? ' sel' : '');
     const meta = pl.concepts ? pl.concepts.strong : '';
-    item.innerHTML = `<div class="wb-play-check">${sel ? '✓' : ''}</div><div class="wb-play-name">${pl.name || 'Sin nombre'}</div><div class="wb-play-meta">${meta}</div>`;
+    item.innerHTML = `<div class="wb-play-check">${sel ? '✓' : ''}</div><div class="wb-play-name">${dCatChipHTML(pl.category)}${pl.name || 'Sin nombre'}</div><div class="wb-play-meta">${meta}</div>`;
     item.addEventListener('click', () => {
       if (pbState.selected.has(pl.id)) pbState.selected.delete(pl.id);
       else pbState.selected.add(pl.id);
@@ -3294,6 +3461,7 @@ dPopulateSelects();
 dPopulateCovList();
 dPopulateDefenseSelect();
 dPopulateRouteLib();
+dPopulateMetaSelects();
 dUpdateConceptInfo();
 dUpdateHint();
 dRenderSavedList();
