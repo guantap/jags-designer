@@ -367,6 +367,28 @@
     .wb-card-cell svg *, .cs-cell svg *, .pb-diagram svg *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     @page{margin:0.4in}
   }
+
+  /* ============== MODO PANTALLA COMPLETA / PRESENTACIÓN ============== */
+  #d-exit-fs{
+    display:none;
+    position:fixed;top:12px;right:12px;z-index:95;
+    width:46px;height:46px;border-radius:50%;
+    background:var(--accent-2);color:#fff;border:2px solid #fff;
+    font-size:1.25rem;font-weight:900;cursor:pointer;line-height:1;
+    box-shadow:0 4px 18px rgba(0,0,0,.55);
+    align-items:center;justify-content:center;
+  }
+  body.presentation #d-exit-fs{display:flex}
+  body.presentation{padding:0;overflow:hidden;height:100vh}
+  body.presentation .header{display:none}
+  body.presentation .d-side{display:none}
+  body.presentation .designer-app{grid-template-columns:1fr;gap:0;height:100vh}
+  body.presentation .canvas-panel{
+    border:none;border-radius:0;height:100vh;
+    display:flex;flex-direction:column;padding:.4rem;
+  }
+  body.presentation .d-toolbar{padding-right:58px;flex-shrink:0}
+  body.presentation .d-canvas-wrap{flex:1;aspect-ratio:auto;min-height:0}
 </style>
 </head>
 <body>
@@ -403,6 +425,7 @@
       </div>
       <div class="d-tool-group">
         <button class="d-tool-btn" id="d-anim-btn">▶ ANIMAR</button>
+        <button class="d-tool-btn" id="d-fs-btn" style="background:var(--accent);color:#000;border-color:var(--accent)">⛶ PANTALLA</button>
       </div>
       <div style="flex:1"></div>
       <div class="d-tool-group">
@@ -521,6 +544,9 @@
 
   </div>
 </div>
+
+<!-- Botón flotante para salir de Pantalla Completa -->
+<button id="d-exit-fs" title="Salir de pantalla completa">✕</button>
 
 <!-- ================= MODAL WRISTBAND ================= -->
 <div class="wb-overlay" id="wb-overlay">
@@ -3057,6 +3083,37 @@ document.getElementById('pb-none').addEventListener('click', () => { pbState.sel
 document.getElementById('pb-print').addEventListener('click', () => {
   if (!pbBuildPages()) { alert('Selecciona al menos una jugada.'); return; }
   dPrintWithMode('print-pb');
+});
+
+// ==================== PANTALLA COMPLETA / PRESENTACIÓN ====================
+function dEnterPresentation() {
+  document.body.classList.add('presentation');
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+  if (req) { try { const r = req.call(el); if (r && r.catch) r.catch(() => {}); } catch (_) {} }
+  dRender();
+}
+function dExitPresentation() {
+  document.body.classList.remove('presentation');
+  const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+  if (fsEl) {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+    if (exit) { try { const r = exit.call(document); if (r && r.catch) r.catch(() => {}); } catch (_) {} }
+  }
+  dRender();
+}
+document.getElementById('d-fs-btn').addEventListener('click', dEnterPresentation);
+document.getElementById('d-exit-fs').addEventListener('click', dExitPresentation);
+// Si el usuario sale del fullscreen nativo (Esc/gesto), sincronizar el modo presentación
+['fullscreenchange','webkitfullscreenchange'].forEach(ev => {
+  document.addEventListener(ev, () => {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      document.body.classList.remove('presentation');
+    }
+  });
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.body.classList.contains('presentation')) dExitPresentation();
 });
 
 // ==================== BOOT ====================
