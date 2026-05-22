@@ -318,7 +318,32 @@
     padding:.45rem .6rem;border-radius:5px;
     font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.78rem;
   }
-  #cs-print-area,#pb-print-area{display:none}
+  #cs-print-area,#pb-print-area,#gd-print-area{display:none}
+
+  /* ===== GAME-DAY ===== */
+  .gd-log{display:flex;flex-direction:column;gap:.25rem;max-height:200px;overflow-y:auto}
+  .gd-log-row{display:flex;align-items:center;gap:.5rem;padding:.35rem .55rem;background:var(--bg-2);border:1px solid var(--line);border-radius:4px;font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.7rem}
+  .gd-log-row .gd-n{color:var(--ink-faint);min-width:22px}
+  .gd-log-row .gd-pl{flex:1;color:var(--ink);font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .gd-log-row .gd-vs{color:var(--ink-faint);font-size:.64rem}
+  .gd-res{font-weight:900;font-size:.62rem;padding:.1rem .4rem;border-radius:3px;letter-spacing:.04em}
+  .gd-res.td{background:var(--accent-5);color:#06080d}
+  .gd-res.bueno{background:rgba(39,224,138,.2);color:var(--accent-5);border:1px solid var(--accent-5)}
+  .gd-res.neutro{background:var(--bg-3);color:var(--ink-dim);border:1px solid var(--ink-faint)}
+  .gd-res.malo{background:rgba(255,59,107,.18);color:var(--accent-2);border:1px solid var(--accent-2)}
+  .gd-log-del{background:transparent;border:1px solid var(--line);color:var(--ink-faint);width:20px;height:20px;border-radius:3px;cursor:pointer;font-size:.6rem;flex-shrink:0}
+  .gd-log-del:hover{border-color:var(--accent-2);color:var(--accent-2)}
+  .gd-stats{display:flex;flex-direction:column;gap:.3rem;max-height:200px;overflow-y:auto}
+  .gd-stat-row{display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:center;padding:.4rem .6rem;background:var(--bg-2);border:1px solid var(--line);border-radius:5px}
+  .gd-stat-name{font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;font-weight:700;font-size:.8rem;color:var(--ink)}
+  .gd-stat-bar{height:6px;background:var(--bg-3);border-radius:3px;overflow:hidden;margin-top:.25rem}
+  .gd-stat-bar i{display:block;height:100%;background:var(--grad-akbal)}
+  .gd-stat-pct{font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;font-weight:900;font-size:1rem;text-align:right}
+  .gd-stat-sub{font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.62rem;color:var(--ink-faint)}
+  .gd-cov-tally{display:flex;flex-wrap:wrap;gap:.4rem}
+  .gd-cov-pill{font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.72rem;padding:.3rem .6rem;border-radius:5px;background:var(--bg-2);border:1px solid var(--line);color:var(--ink-dim)}
+  .gd-cov-pill b{color:var(--accent);font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif}
+  .gd-empty{padding:.6rem;text-align:center;color:var(--ink-faint);font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.68rem}
 
   /* ===== CALL SHEET (layout compartido pantalla + impresión) ===== */
   .cs-sheet{margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;color:#000;background:#fff}
@@ -380,6 +405,17 @@
     .pb-narrative .nr{color:#b91c1c;font-weight:700}
     .pb-narrative strong{color:#0f172a}
     .pb-narrative em{font-style:italic;color:#555}
+
+    /* --- GAME-DAY REPORTE --- */
+    body.print-gd #gd-print-area{display:block !important}
+    .gd-report{padding:0.4in 0.5in;font-family:'Helvetica Neue',Arial,sans-serif;color:#000}
+    .gd-report h1{font-size:22px;font-weight:900;border-bottom:3px solid #000;padding-bottom:4px;margin:0}
+    .gd-report .gd-rsub{font-size:12px;color:#444;margin:3px 0 12px}
+    .gd-report h2{font-size:11px;font-weight:900;letter-spacing:.1em;margin:14px 0 5px;border-bottom:1px solid #999;padding-bottom:2px}
+    .gd-report table{width:100%;border-collapse:collapse;font-size:10px}
+    .gd-report td,.gd-report th{border:1px solid #bbb;padding:3px 6px;text-align:left}
+    .gd-report th{background:#0f172a;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .gd-report .gd-notes-box{font-size:10.5px;line-height:1.55;white-space:pre-wrap;border:1px solid #bbb;padding:8px;min-height:60px}
 
     .wb-card-cell svg *, .cs-cell svg *, .pb-diagram svg *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     @page{margin:0.4in}
@@ -561,6 +597,7 @@
         <button class="d-tool-btn" id="d-callsheet-btn" style="flex:1;justify-content:center">📋 CALL SHEET</button>
         <button class="d-tool-btn" id="d-playbook-btn" style="flex:1;justify-content:center">📖 PLAYBOOK</button>
       </div>
+      <button class="d-tool-btn" id="d-gameday-btn" style="width:100%;margin-top:.5rem;justify-content:center;background:var(--accent-5);color:#06080d;border-color:var(--accent-5)">🏈 GAME-DAY & SCOUTING</button>
       <input type="file" id="d-import-file" accept="application/json" style="display:none">
       <div class="d-save-row" style="margin-top:.6rem;align-items:center;gap:.4rem">
         <span style="font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.65rem;color:var(--ink-faint);letter-spacing:.1em">FILTRAR</span>
@@ -676,6 +713,56 @@
     </div>
   </div>
 </div>
+
+<!-- ================= MODAL GAME-DAY & SCOUTING ================= -->
+<div class="wb-overlay" id="gd-overlay">
+  <div class="wb-modal">
+    <div class="wb-modal-head">
+      <h2>GAME-DAY · REGISTRO Y SCOUTING</h2>
+      <button class="wb-x" id="gd-close">✕</button>
+    </div>
+    <div class="wb-modal-body">
+      <div class="wb-col">
+        <div class="wb-section">
+          <h4>01 · PARTIDO</h4>
+          <div class="wb-opt-row"><label>Rival</label><input type="text" id="gd-rival" class="cs-input" placeholder="Equipo rival"></div>
+          <div class="wb-opt-row"><label>Fecha</label><input type="text" id="gd-date" class="cs-input" placeholder="Fecha"></div>
+        </div>
+        <div class="wb-section">
+          <h4>02 · REGISTRAR LLAMADA</h4>
+          <div class="wb-opt-row"><label>Jugada</label><select class="d-meta-select" id="gd-play" style="width:100%"></select></div>
+          <div class="wb-opt-row"><label>Cobertura</label><select class="d-meta-select" id="gd-cov" style="width:100%"></select></div>
+          <div class="wb-opt-row"><label>Resultado</label><div class="wb-chips" id="gd-result"></div></div>
+          <button class="wb-print-btn" id="gd-add" style="width:100%;margin-top:.4rem">+ REGISTRAR JUGADA</button>
+        </div>
+        <div class="wb-section">
+          <h4>03 · REGISTRO DEL PARTIDO</h4>
+          <div class="wb-toolbar"><button class="wb-mini-btn" id="gd-clear">Limpiar registro</button><span class="wb-count" id="gd-count">0 llamadas</span></div>
+          <div class="gd-log" id="gd-log"></div>
+        </div>
+      </div>
+      <div class="wb-col">
+        <div class="wb-section">
+          <h4>04 · EFECTIVIDAD POR JUGADA</h4>
+          <div class="gd-stats" id="gd-stats"></div>
+        </div>
+        <div class="wb-section">
+          <h4>05 · SCOUTING · COBERTURAS DEL RIVAL</h4>
+          <div class="gd-cov-tally" id="gd-cov-tally"></div>
+        </div>
+        <div class="wb-section">
+          <h4>06 · NOTAS DE SCOUTING</h4>
+          <textarea id="gd-notes" class="cs-input" rows="5" style="width:100%;resize:vertical" placeholder="Tendencias del rival, formaciones, blitzes, jugadores clave…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="wb-modal-foot">
+      <span class="wb-summary" id="gd-summary"></span>
+      <button class="wb-print-btn" id="gd-print">🖨 IMPRIMIR REPORTE</button>
+    </div>
+  </div>
+</div>
+<div id="gd-print-area"></div>
 
 <!-- ================= MODAL CALL SHEET ================= -->
 <div class="wb-overlay" id="cs-overlay">
@@ -2797,7 +2884,8 @@ document.getElementById('d-export-btn').addEventListener('click', () => {
       secondPasser: dState.secondPasser,
       selectedCoverage: dState.selectedCoverage
     },
-    saved: dGetSaved()
+    saved: dGetSaved(),
+    gameday: { rival:gdState.rival, date:gdState.date, notes:gdState.notes, log:gdState.log }
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
   const url = URL.createObjectURL(blob);
@@ -2844,6 +2932,13 @@ document.getElementById('d-import-file').addEventListener('change', (e) => {
         const existingIds = new Set(existing.map(x => x.id));
         const merged = existing.concat(data.saved.filter(x => !existingIds.has(x.id)));
         dSetSaved(merged.slice(0, 30));
+      }
+      if (data.gameday) {
+        gdState.rival = data.gameday.rival || '';
+        gdState.date = data.gameday.date || '';
+        gdState.notes = data.gameday.notes || '';
+        gdState.log = Array.isArray(data.gameday.log) ? data.gameday.log : [];
+        gdSave();
       }
       // sync UI completo
       document.querySelectorAll('[data-d-formation]').forEach(b => b.classList.toggle('active', b.dataset.dFormation === dState.formation));
@@ -3430,8 +3525,196 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && document.body.classList.contains('presentation')) dExitPresentation();
 });
 
+// ==================== GAME-DAY & SCOUTING ====================
+const D_GD_KEY = 'jags_gameday_v1';
+const D_RESULTS = [
+  { id:'td',     label:'TD',     cls:'td',     success:true  },
+  { id:'bueno',  label:'Bueno',  cls:'bueno',  success:true  },
+  { id:'neutro', label:'Neutro', cls:'neutro', success:false },
+  { id:'malo',   label:'Malo',   cls:'malo',   success:false }
+];
+const gdState = { rival:'', date:'', notes:'', log:[], result:'bueno' };
+
+function gdSave() {
+  try { localStorage.setItem(D_GD_KEY, JSON.stringify({ rival:gdState.rival, date:gdState.date, notes:gdState.notes, log:gdState.log })); } catch (_) {}
+}
+function gdLoad() {
+  try {
+    const raw = localStorage.getItem(D_GD_KEY);
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    gdState.rival = s.rival || ''; gdState.date = s.date || '';
+    gdState.notes = s.notes || ''; gdState.log = Array.isArray(s.log) ? s.log : [];
+  } catch (_) {}
+}
+function gdResultMeta(id) { return D_RESULTS.find(r => r.id === id) || D_RESULTS[1]; }
+
+function gdRenderLog() {
+  const cont = document.getElementById('gd-log');
+  cont.innerHTML = '';
+  if (gdState.log.length === 0) { cont.innerHTML = '<div class="gd-empty">Sin llamadas registradas</div>'; return; }
+  gdState.log.slice().reverse().forEach((e, ri) => {
+    const idx = gdState.log.length - ri;
+    const rm = gdResultMeta(e.result);
+    const covName = e.coverage ? (D_COVERAGES[e.coverage] ? D_COVERAGES[e.coverage].name : e.coverage) : '—';
+    const row = document.createElement('div');
+    row.className = 'gd-log-row';
+    row.innerHTML = `<span class="gd-n">${idx}</span><span class="gd-pl">${e.playName||'Jugada'}</span><span class="gd-vs">vs ${covName}</span><span class="gd-res ${rm.cls}">${rm.label}</span><button class="gd-log-del" data-gddel="${e.id}">✕</button>`;
+    row.querySelector('[data-gddel]').addEventListener('click', () => {
+      gdState.log = gdState.log.filter(x => x.id !== e.id);
+      gdSave(); gdRenderAll();
+    });
+    cont.appendChild(row);
+  });
+}
+function gdRenderStats() {
+  const cont = document.getElementById('gd-stats');
+  cont.innerHTML = '';
+  const byPlay = {};
+  gdState.log.forEach(e => {
+    const k = e.playName || 'Jugada';
+    if (!byPlay[k]) byPlay[k] = { calls:0, ok:0 };
+    byPlay[k].calls++;
+    if (gdResultMeta(e.result).success) byPlay[k].ok++;
+  });
+  const rows = Object.entries(byPlay).sort((a,b) => b[1].calls - a[1].calls);
+  if (rows.length === 0) { cont.innerHTML = '<div class="gd-empty">Aún no hay datos de efectividad</div>'; return; }
+  rows.forEach(([name, s]) => {
+    const pct = Math.round((s.ok / s.calls) * 100);
+    const row = document.createElement('div');
+    row.className = 'gd-stat-row';
+    const color = pct >= 60 ? 'var(--accent-5)' : pct >= 40 ? 'var(--accent-3)' : 'var(--accent-2)';
+    row.innerHTML = `
+      <div><div class="gd-stat-name">${name}</div><div class="gd-stat-sub">${s.calls} llamada${s.calls>1?'s':''} · ${s.ok} con éxito</div><div class="gd-stat-bar"><i style="width:${pct}%"></i></div></div>
+      <div class="gd-stat-pct" style="color:${color}">${pct}%</div>`;
+    cont.appendChild(row);
+  });
+}
+function gdRenderScouting() {
+  const cont = document.getElementById('gd-cov-tally');
+  cont.innerHTML = '';
+  const tally = {};
+  gdState.log.forEach(e => { if (e.coverage) tally[e.coverage] = (tally[e.coverage]||0) + 1; });
+  const entries = Object.entries(tally).sort((a,b) => b[1] - a[1]);
+  if (entries.length === 0) { cont.innerHTML = '<div class="gd-empty">Registra llamadas para ver las tendencias del rival</div>'; return; }
+  entries.forEach(([cov, n]) => {
+    const name = D_COVERAGES[cov] ? D_COVERAGES[cov].name : cov;
+    const pill = document.createElement('div');
+    pill.className = 'gd-cov-pill';
+    pill.innerHTML = `${name} <b>×${n}</b>`;
+    cont.appendChild(pill);
+  });
+}
+function gdRenderAll() {
+  gdRenderLog(); gdRenderStats(); gdRenderScouting();
+  document.getElementById('gd-count').textContent = `${gdState.log.length} llamada${gdState.log.length!==1?'s':''}`;
+  const ok = gdState.log.filter(e => gdResultMeta(e.result).success).length;
+  const pct = gdState.log.length ? Math.round(ok/gdState.log.length*100) : 0;
+  document.getElementById('gd-summary').textContent = gdState.log.length
+    ? `${gdState.log.length} llamadas · ${pct}% de éxito global`
+    : 'Registra las jugadas que llames en el partido';
+}
+function gdPopulate() {
+  // jugadas
+  const playSel = document.getElementById('gd-play');
+  const saved = dGetSaved();
+  playSel.innerHTML = saved.length
+    ? saved.map(p => `<option value="${p.id}">${p.name||'Sin nombre'}</option>`).join('')
+    : '<option value="">— sin jugadas guardadas —</option>';
+  // coberturas
+  document.getElementById('gd-cov').innerHTML =
+    Object.entries(D_COVERAGES).map(([k,c]) => `<option value="${k}">${c.name}</option>`).join('') +
+    '<option value="otra">Otra / no leída</option>';
+  // resultados (chips)
+  const rc = document.getElementById('gd-result');
+  rc.innerHTML = '';
+  D_RESULTS.forEach(r => {
+    const chip = document.createElement('button');
+    chip.className = 'wb-chip' + (r.id === gdState.result ? ' active' : '');
+    chip.textContent = r.label;
+    chip.addEventListener('click', () => {
+      gdState.result = r.id;
+      rc.querySelectorAll('.wb-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+    });
+    rc.appendChild(chip);
+  });
+}
+function gdOpen() {
+  gdPopulate();
+  document.getElementById('gd-rival').value = gdState.rival;
+  document.getElementById('gd-date').value = gdState.date;
+  document.getElementById('gd-notes').value = gdState.notes;
+  gdRenderAll();
+  document.getElementById('gd-overlay').classList.add('open');
+}
+function gdAddCall() {
+  const playSel = document.getElementById('gd-play');
+  const opt = playSel.options[playSel.selectedIndex];
+  if (!opt || !opt.value) { alert('Guarda al menos una jugada para registrarla.'); return; }
+  gdState.log.push({
+    id: Date.now(),
+    playId: opt.value,
+    playName: opt.textContent,
+    coverage: document.getElementById('gd-cov').value,
+    result: gdState.result
+  });
+  gdSave(); gdRenderAll();
+}
+function gdBuildReport() {
+  const area = document.getElementById('gd-print-area');
+  const ok = gdState.log.filter(e => gdResultMeta(e.result).success).length;
+  const pct = gdState.log.length ? Math.round(ok/gdState.log.length*100) : 0;
+  // efectividad
+  const byPlay = {};
+  gdState.log.forEach(e => {
+    const k = e.playName || 'Jugada';
+    if (!byPlay[k]) byPlay[k] = { calls:0, ok:0 };
+    byPlay[k].calls++; if (gdResultMeta(e.result).success) byPlay[k].ok++;
+  });
+  const tally = {};
+  gdState.log.forEach(e => { if (e.coverage) tally[e.coverage] = (tally[e.coverage]||0)+1; });
+  let html = `<div class="gd-report"><h1>REPORTE GAME-DAY</h1>`;
+  html += `<div class="gd-rsub">${gdState.rival ? 'vs ' + gdState.rival : 'Partido'}${gdState.date ? ' · ' + gdState.date : ''} · ${gdState.log.length} llamadas · ${pct}% éxito</div>`;
+  html += `<h2>REGISTRO DE LLAMADAS</h2><table><tr><th>#</th><th>Jugada</th><th>Cobertura</th><th>Resultado</th></tr>`;
+  gdState.log.forEach((e, i) => {
+    const covName = e.coverage ? (D_COVERAGES[e.coverage] ? D_COVERAGES[e.coverage].name : e.coverage) : '—';
+    html += `<tr><td>${i+1}</td><td>${e.playName||''}</td><td>${covName}</td><td>${gdResultMeta(e.result).label}</td></tr>`;
+  });
+  html += `</table>`;
+  html += `<h2>EFECTIVIDAD POR JUGADA</h2><table><tr><th>Jugada</th><th>Llamadas</th><th>Éxitos</th><th>%</th></tr>`;
+  Object.entries(byPlay).sort((a,b)=>b[1].calls-a[1].calls).forEach(([n,s]) => {
+    html += `<tr><td>${n}</td><td>${s.calls}</td><td>${s.ok}</td><td>${Math.round(s.ok/s.calls*100)}%</td></tr>`;
+  });
+  html += `</table>`;
+  html += `<h2>SCOUTING · COBERTURAS DEL RIVAL</h2><table><tr><th>Cobertura</th><th>Veces vista</th></tr>`;
+  Object.entries(tally).sort((a,b)=>b[1]-a[1]).forEach(([c,n]) => {
+    html += `<tr><td>${D_COVERAGES[c]?D_COVERAGES[c].name:c}</td><td>${n}</td></tr>`;
+  });
+  html += `</table>`;
+  html += `<h2>NOTAS DE SCOUTING</h2><div class="gd-notes-box">${(gdState.notes||'Sin notas').replace(/</g,'&lt;')}</div></div>`;
+  area.innerHTML = html;
+}
+document.getElementById('d-gameday-btn').addEventListener('click', gdOpen);
+document.getElementById('gd-close').addEventListener('click', () => document.getElementById('gd-overlay').classList.remove('open'));
+document.getElementById('gd-overlay').addEventListener('click', (e) => { if (e.target.id === 'gd-overlay') e.currentTarget.classList.remove('open'); });
+document.getElementById('gd-add').addEventListener('click', gdAddCall);
+document.getElementById('gd-clear').addEventListener('click', () => {
+  if (gdState.log.length && !confirm('¿Limpiar todo el registro del partido?')) return;
+  gdState.log = []; gdSave(); gdRenderAll();
+});
+['gd-rival','gd-date'].forEach(id => document.getElementById(id).addEventListener('input', (e) => {
+  gdState[id === 'gd-rival' ? 'rival' : 'date'] = e.target.value; gdSave();
+}));
+document.getElementById('gd-notes').addEventListener('input', (e) => { gdState.notes = e.target.value; gdSave(); });
+document.getElementById('gd-print').addEventListener('click', () => {
+  gdBuildReport();
+  dPrintWithMode('print-gd');
+});
+
 // ==================== BOOT ====================
 dLoadAuto();
+gdLoad();
 // Garantizar slots QB en routes/motions
 if (!dState.routes.QB) dState.routes.QB = [];
 if (!dState.motions) dState.motions = { X:[], H:[], Y:[], C:[], QB:[] };
