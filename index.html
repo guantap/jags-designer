@@ -241,18 +241,27 @@
     font-size:.68rem;letter-spacing:.16em;color:var(--accent);
     margin-bottom:.6rem;font-weight:600;text-transform:uppercase;
   }
-  .wb-layouts{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
-  .wb-layout-btn{
-    background:var(--bg-2);border:1px solid var(--line);border-radius:7px;
-    padding:.6rem .4rem;cursor:pointer;text-align:center;transition:all .15s;
+  /* ===== HOJA DE WRISTBAND (grilla legible compartida pantalla + impresión) ===== */
+  .wb-sheet{background:#fff;color:#000;font-family:'Helvetica Neue',Arial,sans-serif;width:100%;border-radius:4px;padding:8px}
+  .wb-sheet-title{font-size:13px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:8px}
+  .wb-grid{display:grid;gap:8px}
+  .wb-pcell{position:relative;border:1.5px dashed #94a3b8;border-radius:5px;overflow:hidden;background:#fff;padding:2px}
+  .wb-pnum{
+    position:absolute;top:5px;left:5px;z-index:3;
+    background:#0f172a;color:#fff;
+    min-width:20px;height:20px;border-radius:5px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;
+    font-weight:900;font-size:11px;padding:0 4px;
   }
-  .wb-layout-btn:hover{border-color:var(--accent-4)}
-  .wb-layout-btn.active{border-color:var(--accent-4);background:rgba(124,77,255,.12)}
-  .wb-layout-grid{display:grid;gap:2px;margin:0 auto .4rem;width:54px;height:34px}
-  .wb-layout-grid div{background:var(--ink-faint);border-radius:1px}
-  .wb-layout-btn.active .wb-layout-grid div{background:var(--accent-4)}
-  .wb-layout-btn span{font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;font-weight:700;font-size:.72rem;color:var(--ink-dim);letter-spacing:.03em}
-  .wb-layout-btn.active span{color:var(--ink)}
+  .wb-pname{
+    position:absolute;top:6px;right:6px;z-index:3;
+    font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;
+    font-weight:700;font-size:8px;color:#475569;text-transform:uppercase;
+    max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;
+  }
+  .wb-pcell svg{display:block;width:100%;height:auto}
+
   .wb-toolbar{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem}
   .wb-mini-btn{background:var(--bg-2);border:1px solid var(--line);color:var(--ink-dim);padding:.3rem .6rem;border-radius:5px;cursor:pointer;font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.68rem}
   .wb-mini-btn:hover{border-color:var(--accent);color:var(--ink)}
@@ -364,13 +373,11 @@
     body::before{display:none}
     body > .header, body > .designer-app, .wb-overlay { display:none !important }
 
-    /* --- WRISTBAND --- */
-    /* Las tarjetas se apilan sobre la misma hoja para no gastar páginas extra */
-    body.print-wb #wb-print-area{display:block !important;padding:0.15in 0}
-    .wb-card{page-break-inside:avoid;border:1.5px solid #000;display:grid;gap:3px;background:#fff;margin:0 auto 0.18in}
-    .wb-card-cell{border:1px solid #888;overflow:hidden;position:relative;background:#fff}
-    .wb-card-cell svg{display:block;width:100%;height:100%}
-    .wb-cell-label{font-size:9px;background:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    /* --- WRISTBAND · hoja de jugadas en grilla --- */
+    body.print-wb #wb-print-area{display:block !important}
+    .wb-sheet{width:100%}
+    .wb-pcell{page-break-inside:avoid}
+    .wb-pnum{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 
     /* --- CALL SHEET --- */
     body.print-cs #cs-print-area{display:block !important}
@@ -416,7 +423,7 @@
     .gd-report th{background:#0f172a;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .gd-report .gd-notes-box{font-size:10.5px;line-height:1.55;white-space:pre-wrap;border:1px solid #bbb;padding:8px;min-height:60px}
 
-    .wb-card-cell svg *, .cs-cell svg *, .pb-diagram svg *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .wb-pcell svg *, .cs-cell svg *, .pb-diagram svg *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     @page{margin:0.4in}
   }
 
@@ -621,8 +628,9 @@
     <div class="wb-modal-body">
       <div class="wb-col">
         <div class="wb-section">
-          <h4>01 · DISTRIBUCIÓN POR TARJETA</h4>
-          <div class="wb-layouts" id="wb-layouts"></div>
+          <h4>01 · COLUMNAS POR HOJA</h4>
+          <div class="wb-opt-row"><label>Columnas</label><div class="wb-chips" id="wb-cols"></div></div>
+          <div class="wb-opt-row"><label>Encabezado</label><input type="text" id="wb-title" class="cs-input" placeholder="Título (ej. nombre del equipo)"></div>
         </div>
         <div class="wb-section">
           <h4>02 · JUGADAS A INCLUIR</h4>
@@ -633,23 +641,18 @@
           </div>
           <div class="wb-plays" id="wb-plays"></div>
         </div>
-      </div>
-      <div class="wb-col">
         <div class="wb-section">
-          <h4>03 · DIMENSIONES (pulgadas)</h4>
-          <div class="wb-opt-row"><label>Ancho</label><div class="wb-chips" id="wb-width"></div></div>
-          <div class="wb-opt-row"><label>Alto</label><div class="wb-chips" id="wb-height"></div></div>
-        </div>
-        <div class="wb-section">
-          <h4>04 · ESTILO</h4>
+          <h4>03 · ESTILO</h4>
           <div class="wb-opt-row"><label>Grosor ruta</label><div class="wb-chips" id="wb-weight"></div></div>
           <div class="wb-opt-row"><label>Etiqueta</label><div class="wb-chips" id="wb-label"></div></div>
           <div class="wb-opt-row"><label>Zonas</label><div class="wb-chips" id="wb-zones"></div></div>
           <div class="wb-opt-row"><label>Copias</label><div class="wb-chips" id="wb-copies"></div></div>
         </div>
+      </div>
+      <div class="wb-col">
         <div class="wb-section">
-          <h4>05 · VISTA PREVIA</h4>
-          <div class="wb-preview" id="wb-preview"></div>
+          <h4>04 · VISTA PREVIA</h4>
+          <div class="wb-preview" id="wb-preview" style="background:#e2e8f0;padding:10px;align-items:flex-start"></div>
         </div>
       </div>
     </div>
@@ -2963,22 +2966,13 @@ document.getElementById('d-import-file').addEventListener('change', (e) => {
 });
 
 // ==================== WRISTBAND ====================
-const WB_LAYOUTS = {
-  '1': { cols:1, rows:1, label:'1 JUGADA'  },
-  '2': { cols:2, rows:1, label:'2 JUGADAS' },
-  '3': { cols:3, rows:1, label:'3 JUGADAS' },
-  '4': { cols:2, rows:2, label:'4 JUGADAS' },
-  '6': { cols:3, rows:2, label:'6 JUGADAS' },
-  '8': { cols:4, rows:2, label:'8 JUGADAS' }
-};
 const wbState = {
-  layout: '6',
-  width: 4.5,
-  height: 2.5,
+  cols: 3,               // columnas de la grilla de la hoja
+  title: '',
   copies: 1,
   routeWeight: 'medium',
   labelMode: 'number',   // number | name | both | none
-  zones: false,
+  zones: true,
   selected: new Set()
 };
 
@@ -3065,66 +3059,36 @@ function wbPlaySVG(play, idx, opts) {
   return s;
 }
 
-function wbCellHTML(play, idxGlobal, numInCard, opts) {
-  let label = '';
-  if (opts.labelMode !== 'none' && play) {
-    const num = numInCard;
-    let txt = opts.labelMode === 'number' ? `${num}`
-            : opts.labelMode === 'name' ? (play.name || `Jugada ${num}`)
-            : `${num} · ${play.name || ''}`;
-    label = `<div class="wb-cell-label">${txt}</div>`;
+// Celda de una jugada en la hoja: badge de número + nombre opcional + diagrama
+function wbPcell(play, num, gid, opts) {
+  let h = '<div class="wb-pcell">';
+  if (opts.labelMode !== 'none') h += `<div class="wb-pnum">${num}</div>`;
+  if ((opts.labelMode === 'name' || opts.labelMode === 'both') && play.name) {
+    h += `<div class="wb-pname">${play.name}</div>`;
   }
-  return label + (play ? wbPlaySVG(play, idxGlobal, opts) : '');
+  h += wbPlaySVG(play, gid, opts);
+  h += '</div>';
+  return h;
 }
-
-// Construye el área de impresión con las tarjetas
+// HTML de la hoja completa: grilla continua de jugadas
+function wbSheetHTML() {
+  const plays = dGetSaved().filter(pl => wbState.selected.has(pl.id));
+  if (plays.length === 0) return '';
+  const opts = { routeWeight: wbState.routeWeight, zones: wbState.zones, labelMode: wbState.labelMode };
+  let gid = 0, html = '<div class="wb-sheet">';
+  if (wbState.title) html += `<div class="wb-sheet-title">${wbState.title}</div>`;
+  html += `<div class="wb-grid" style="grid-template-columns:repeat(${wbState.cols},1fr)">`;
+  for (let c = 0; c < wbState.copies; c++) {
+    plays.forEach((pl, i) => { html += wbPcell(pl, i + 1, gid++, opts); });
+  }
+  html += '</div></div>';
+  return html;
+}
 function wbBuildPrint() {
-  const area = document.getElementById('wb-print-area');
-  area.innerHTML = '';
   const plays = dGetSaved().filter(pl => wbState.selected.has(pl.id));
   if (plays.length === 0) return false;
-  const layout = WB_LAYOUTS[wbState.layout];
-  const perCard = layout.cols * layout.rows;
-  const cards = [];
-  for (let i = 0; i < plays.length; i += perCard) cards.push(plays.slice(i, i + perCard));
-  const opts = { routeWeight: wbState.routeWeight, zones: wbState.zones, labelMode: wbState.labelMode };
-  let gid = 0;
-  // Las tarjetas se apilan una debajo de otra y fluyen sobre la misma hoja
-  // (page-break-inside:avoid evita partir una tarjeta entre páginas).
-  for (let c = 0; c < wbState.copies; c++) {
-    cards.forEach(cardPlays => {
-      const card = document.createElement('div');
-      card.className = 'wb-card';
-      card.style.width = wbState.width + 'in';
-      card.style.height = wbState.height + 'in';
-      card.style.gridTemplateColumns = `repeat(${layout.cols},1fr)`;
-      card.style.gridTemplateRows = `repeat(${layout.rows},1fr)`;
-      for (let k = 0; k < perCard; k++) {
-        const cell = document.createElement('div');
-        cell.className = 'wb-card-cell';
-        const pl = cardPlays[k];
-        if (pl) cell.innerHTML = wbCellHTML(pl, gid++, k + 1, opts);
-        card.appendChild(cell);
-      }
-      area.appendChild(card);
-    });
-  }
+  document.getElementById('wb-print-area').innerHTML = wbSheetHTML();
   return true;
-}
-
-// ---- UI del modal ----
-function wbRenderLayouts() {
-  const cont = document.getElementById('wb-layouts');
-  cont.innerHTML = '';
-  Object.entries(WB_LAYOUTS).forEach(([key, lay]) => {
-    const btn = document.createElement('button');
-    btn.className = 'wb-layout-btn' + (key === wbState.layout ? ' active' : '');
-    let cells = '';
-    for (let i = 0; i < lay.cols * lay.rows; i++) cells += '<div></div>';
-    btn.innerHTML = `<div class="wb-layout-grid" style="grid-template-columns:repeat(${lay.cols},1fr);grid-template-rows:repeat(${lay.rows},1fr)">${cells}</div><span>${lay.label}</span>`;
-    btn.addEventListener('click', () => { wbState.layout = key; wbRenderLayouts(); wbRenderPreview(); wbUpdateSummary(); });
-    cont.appendChild(btn);
-  });
 }
 function wbRenderPlays() {
   const cont = document.getElementById('wb-plays');
@@ -3160,52 +3124,37 @@ function wbChips(containerId, options, currentVal, onPick) {
   });
 }
 function wbRenderOptions() {
-  wbChips('wb-width', [3,3.25,3.5,3.75,4,4.25,4.5,4.75,5].map(v => ({val:v,label:v+'"'})),
-    () => wbState.width, v => { wbState.width = v; wbRenderOptions(); wbRenderPreview(); wbUpdateSummary(); });
-  wbChips('wb-height', [2,2.25,2.5,2.75,3,3.5].map(v => ({val:v,label:v+'"'})),
-    () => wbState.height, v => { wbState.height = v; wbRenderOptions(); wbRenderPreview(); wbUpdateSummary(); });
+  wbChips('wb-cols', [2,3,4].map(v => ({val:v,label:v+' columnas'})),
+    () => wbState.cols, v => { wbState.cols = v; wbRenderOptions(); wbRenderPreview(); wbUpdateSummary(); });
   wbChips('wb-weight', [{val:'thin',label:'FINO'},{val:'medium',label:'MEDIO'},{val:'thick',label:'GRUESO'}],
     () => wbState.routeWeight, v => { wbState.routeWeight = v; wbRenderOptions(); wbRenderPreview(); });
   wbChips('wb-label', [{val:'number',label:'NÚMERO'},{val:'name',label:'NOMBRE'},{val:'both',label:'AMBOS'},{val:'none',label:'NINGUNA'}],
     () => wbState.labelMode, v => { wbState.labelMode = v; wbRenderOptions(); wbRenderPreview(); });
   wbChips('wb-zones', [{val:false,label:'OCULTAR'},{val:true,label:'MOSTRAR'}],
     () => wbState.zones, v => { wbState.zones = v; wbRenderOptions(); wbRenderPreview(); });
-  wbChips('wb-copies', [1,2,3,4,5,6,8,10,12].map(v => ({val:v,label:String(v)})),
-    () => wbState.copies, v => { wbState.copies = v; wbRenderOptions(); wbUpdateSummary(); });
+  wbChips('wb-copies', [1,2,3,4].map(v => ({val:v,label:String(v)})),
+    () => wbState.copies, v => { wbState.copies = v; wbRenderOptions(); wbRenderPreview(); wbUpdateSummary(); });
 }
 function wbRenderPreview() {
   const cont = document.getElementById('wb-preview');
   const plays = dGetSaved().filter(pl => wbState.selected.has(pl.id));
-  const layout = WB_LAYOUTS[wbState.layout];
-  const perCard = layout.cols * layout.rows;
   if (plays.length === 0) {
-    cont.innerHTML = '<span style="color:#94a3b8;font-family:monospace;font-size:.72rem">Selecciona jugadas para previsualizar</span>';
+    cont.innerHTML = '<span style="color:#64748b;font-family:monospace;font-size:.72rem">Selecciona jugadas para previsualizar</span>';
     return;
   }
-  const opts = { routeWeight: wbState.routeWeight, zones: wbState.zones, labelMode: wbState.labelMode };
-  let html = `<div style="display:grid;gap:3px;width:100%;grid-template-columns:repeat(${layout.cols},1fr);grid-template-rows:repeat(${layout.rows},1fr);aspect-ratio:${wbState.width}/${wbState.height};border:1.5px solid #000">`;
-  for (let k = 0; k < perCard; k++) {
-    const pl = plays[k];
-    html += `<div style="border:1px solid #888;overflow:hidden;position:relative;background:#fff">${pl ? wbCellHTML(pl, 900+k, k+1, opts) : ''}</div>`;
-  }
-  html += '</div>';
-  cont.innerHTML = html;
+  cont.innerHTML = wbSheetHTML();
 }
 function wbUpdateSummary() {
-  const plays = dGetSaved().filter(pl => wbState.selected.has(pl.id));
-  const layout = WB_LAYOUTS[wbState.layout];
-  const perCard = layout.cols * layout.rows;
-  const cardsNeeded = Math.max(1, Math.ceil(plays.length / perCard));
-  document.getElementById('wb-count').textContent = `${plays.length} seleccionadas`;
+  const n = dGetSaved().filter(pl => wbState.selected.has(pl.id)).length;
+  document.getElementById('wb-count').textContent = `${n} seleccionadas`;
   document.getElementById('wb-summary').textContent =
-    `${plays.length} jugadas · ${cardsNeeded} tarjeta(s) × ${wbState.copies} copia(s) = ${cardsNeeded * wbState.copies} páginas · ${wbState.width}" × ${wbState.height}"`;
+    `${n} jugada${n!==1?'s':''} · ${wbState.cols} columnas${wbState.copies>1?' · '+wbState.copies+' copias':''}`;
 }
 function wbOpen() {
-  // preselecciona todas las jugadas si no hay nada seleccionado
   if (wbState.selected.size === 0) {
     dGetSaved().forEach(pl => wbState.selected.add(pl.id));
   }
-  wbRenderLayouts();
+  document.getElementById('wb-title').value = wbState.title;
   wbRenderPlays();
   wbRenderOptions();
   wbRenderPreview();
@@ -3228,6 +3177,10 @@ document.getElementById('wb-select-all').addEventListener('click', () => {
 document.getElementById('wb-select-none').addEventListener('click', () => {
   wbState.selected.clear();
   wbRenderPlays(); wbRenderPreview(); wbUpdateSummary();
+});
+document.getElementById('wb-title').addEventListener('input', (e) => {
+  wbState.title = e.target.value;
+  wbRenderPreview();
 });
 document.getElementById('wb-print').addEventListener('click', () => {
   if (!wbBuildPrint()) { alert('Selecciona al menos una jugada para imprimir.'); return; }
