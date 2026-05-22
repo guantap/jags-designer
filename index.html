@@ -52,6 +52,7 @@
   .d-tool-btn .d-swatch{width:11px;height:11px;border-radius:50%;border:1px solid #000}
   .d-tool-btn.d-danger:hover{border-color:var(--accent-2);color:var(--accent-2)}
   .d-tool-btn.d-toggle.active{background:var(--accent-4);color:#fff;border-color:var(--accent-4)}
+  .d-tool-btn.d-mode.active{background:var(--accent-3);color:#000;border-color:var(--accent-3)}
 
   .d-canvas-wrap{position:relative;background:#0a0e15;border:1px solid var(--line);border-radius:6px;overflow:hidden;aspect-ratio:600 / 360;width:100%}
   #d-field{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;user-select:none;-webkit-user-select:none;touch-action:none}
@@ -83,6 +84,14 @@
   .d-formation-btn.active{background:var(--accent-4);color:#fff;border-color:var(--accent-4)}
 
   .d-players-list{display:flex;flex-direction:column;gap:.35rem}
+  .d-route-lib{display:grid;grid-template-columns:repeat(3,1fr);gap:.3rem;margin-top:.5rem}
+  .d-route-btn{
+    background:var(--bg-2);border:1px solid var(--line);color:var(--ink-dim);
+    padding:.4rem .2rem;border-radius:5px;cursor:pointer;
+    font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;
+    font-size:.62rem;letter-spacing:.04em;transition:all .12s;text-align:center;
+  }
+  .d-route-btn:hover{border-color:var(--accent-3);color:var(--ink);background:var(--bg-3)}
   .d-player-row{display:flex;align-items:center;gap:.5rem;padding:.4rem .55rem;background:var(--bg-2);border:1px solid var(--line);border-radius:5px;cursor:pointer;transition:border-color .15s}
   .d-player-row.selected{border-color:var(--accent)}
   .d-player-dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;font-weight:900;font-size:.8rem;color:#000;border:2px solid #000;flex-shrink:0}
@@ -187,6 +196,125 @@
   .d-saved-item b{color:var(--ink);font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;letter-spacing:.05em;margin-right:.5rem;font-size:.8rem}
 
   footer{margin-top:2rem;padding-top:1.2rem;border-top:1px solid var(--line);text-align:center;font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.7rem;color:var(--ink-faint);letter-spacing:.2em}
+
+  /* ============== MODAL WRISTBAND ============== */
+  .wb-overlay{
+    display:none;position:fixed;inset:0;z-index:100;
+    background:rgba(6,8,13,.88);backdrop-filter:blur(4px);
+    align-items:center;justify-content:center;padding:1.5rem;
+  }
+  .wb-overlay.open{display:flex}
+  .wb-modal{
+    background:var(--bg-1);border:1px solid var(--line);border-radius:12px;
+    width:min(1000px,100%);max-height:92vh;display:flex;flex-direction:column;
+    box-shadow:0 30px 80px rgba(0,0,0,.6);
+  }
+  .wb-modal-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:1.1rem 1.4rem;border-bottom:1px solid var(--line);
+  }
+  .wb-modal-head h2{font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;font-weight:900;font-size:1.1rem;letter-spacing:-.01em;color:var(--accent-3);text-transform:uppercase}
+  .wb-x{background:var(--bg-2);border:1px solid var(--line);color:var(--ink-dim);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:1rem}
+  .wb-x:hover{border-color:var(--accent-2);color:var(--accent-2)}
+  .wb-modal-body{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;padding:1.3rem;overflow-y:auto}
+  @media (max-width:760px){.wb-modal-body{grid-template-columns:1fr}}
+  .wb-col{display:flex;flex-direction:column;gap:1.2rem}
+  .wb-section h4{
+    font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;
+    font-size:.68rem;letter-spacing:.16em;color:var(--accent);
+    margin-bottom:.6rem;font-weight:600;text-transform:uppercase;
+  }
+  .wb-layouts{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+  .wb-layout-btn{
+    background:var(--bg-2);border:1px solid var(--line);border-radius:7px;
+    padding:.6rem .4rem;cursor:pointer;text-align:center;transition:all .15s;
+  }
+  .wb-layout-btn:hover{border-color:var(--accent-4)}
+  .wb-layout-btn.active{border-color:var(--accent-4);background:rgba(124,77,255,.12)}
+  .wb-layout-grid{display:grid;gap:2px;margin:0 auto .4rem;width:54px;height:34px}
+  .wb-layout-grid div{background:var(--ink-faint);border-radius:1px}
+  .wb-layout-btn.active .wb-layout-grid div{background:var(--accent-4)}
+  .wb-layout-btn span{font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;font-weight:700;font-size:.72rem;color:var(--ink-dim);letter-spacing:.03em}
+  .wb-layout-btn.active span{color:var(--ink)}
+  .wb-toolbar{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem}
+  .wb-mini-btn{background:var(--bg-2);border:1px solid var(--line);color:var(--ink-dim);padding:.3rem .6rem;border-radius:5px;cursor:pointer;font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.68rem}
+  .wb-mini-btn:hover{border-color:var(--accent);color:var(--ink)}
+  .wb-count{font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.68rem;color:var(--ink-faint);margin-left:auto}
+  .wb-plays{display:flex;flex-direction:column;gap:.3rem;max-height:240px;overflow-y:auto}
+  .wb-play-item{
+    display:flex;align-items:center;gap:.6rem;padding:.45rem .6rem;
+    background:var(--bg-2);border:1px solid var(--line);border-radius:5px;cursor:pointer;
+  }
+  .wb-play-item:hover{border-color:var(--accent)}
+  .wb-play-item.sel{border-color:var(--accent-5);background:rgba(39,224,138,.07)}
+  .wb-play-check{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--ink-faint);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:900}
+  .wb-play-item.sel .wb-play-check{background:var(--accent-5);border-color:var(--accent-5);color:#000}
+  .wb-play-name{font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;font-weight:700;font-size:.82rem;color:var(--ink);flex:1}
+  .wb-play-meta{font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.66rem;color:var(--ink-faint)}
+  .wb-empty{padding:1rem;text-align:center;color:var(--ink-faint);font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.72rem}
+  .wb-opt-row{display:grid;grid-template-columns:90px 1fr;gap:.6rem;align-items:center;margin-bottom:.5rem}
+  .wb-opt-row label{font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.68rem;color:var(--ink-faint);letter-spacing:.08em}
+  .wb-chips{display:flex;gap:.3rem;flex-wrap:wrap}
+  .wb-chip{
+    background:var(--bg-2);border:1px solid var(--line);color:var(--ink-dim);
+    padding:.32rem .55rem;border-radius:5px;cursor:pointer;
+    font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.7rem;transition:all .12s;
+  }
+  .wb-chip:hover{border-color:var(--accent)}
+  .wb-chip.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700}
+  .wb-preview{background:#fff;border:1px solid var(--line);border-radius:6px;padding:8px;min-height:120px;display:flex;align-items:center;justify-content:center}
+  .wb-preview svg{max-width:100%;height:auto}
+  .wb-modal-foot{
+    display:flex;align-items:center;justify-content:space-between;gap:1rem;
+    padding:1rem 1.4rem;border-top:1px solid var(--line);
+  }
+  .wb-summary{font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.72rem;color:var(--ink-dim)}
+  .wb-print-btn{
+    background:var(--grad-kinich);color:#06080d;border:none;border-radius:7px;
+    padding:.7rem 1.4rem;cursor:pointer;
+    font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;font-weight:900;
+    font-size:.9rem;letter-spacing:.03em;text-transform:uppercase;
+  }
+  .wb-print-btn:hover{filter:brightness(1.1)}
+  #wb-print-area{display:none}
+  .cmp-diagram{background:#fff;border:1px solid var(--line);border-radius:6px;padding:6px}
+  .cmp-diagram svg{display:block;width:100%;height:auto}
+  .cmp-info{margin-top:.7rem;background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:.7rem .85rem;font-size:.78rem;color:var(--ink-dim);font-family:'Iowan Old Style','Georgia',serif;line-height:1.5}
+  .cmp-info b{color:var(--accent-3);font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;font-size:.8rem;display:block;margin-bottom:.3rem;letter-spacing:.03em}
+  .cmp-info .cmp-cov{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.4rem}
+  .cmp-info .cmp-cov span{font-family:'SF Mono','Menlo','Consolas',ui-monospace,monospace;font-size:.64rem;padding:.15rem .4rem;border-radius:3px;border:1px solid}
+  .cmp-info .cmp-cov span.ok{border-color:var(--accent-5);color:var(--accent-5);background:rgba(39,224,138,.08)}
+  .cmp-info .cmp-cov span.bad{border-color:var(--accent-2);color:var(--accent-2);background:rgba(255,59,107,.08)}
+
+  /* etiqueta de celda (número/nombre de jugada) — vale para preview e impresión */
+  .wb-cell-label{
+    position:absolute;top:0;left:0;right:0;z-index:2;
+    background:rgba(15,23,42,.92);color:#fff;
+    font-family:'Helvetica Neue','Arial Black',system-ui,sans-serif;
+    font-weight:900;font-size:8px;letter-spacing:.03em;
+    padding:2px 4px;text-transform:uppercase;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+
+  /* ============== ESTILOS DE IMPRESIÓN ============== */
+  @media print {
+    body{background:#fff;padding:0;margin:0}
+    body::before{display:none}
+    body > .header, body > .designer-app, .wb-overlay { display:none !important }
+    #wb-print-area{display:block !important}
+    .wb-page{page-break-after:always;display:flex;align-items:center;justify-content:center;padding:0.2in}
+    .wb-page:last-child{page-break-after:auto}
+    .wb-card{
+      page-break-inside:avoid;
+      border:1.5px solid #000;
+      display:grid;gap:3px;
+      background:#fff;
+    }
+    .wb-card-cell{border:1px solid #888;overflow:hidden;position:relative;background:#fff}
+    .wb-card-cell svg{display:block;width:100%;height:100%}
+    .wb-cell-label{font-size:9px;background:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .wb-card-cell svg rect,.wb-card-cell svg circle,.wb-card-cell svg path{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
 </style>
 </head>
 <body>
@@ -216,8 +344,19 @@
         <button class="d-tool-btn" data-d-player="C"><span class="d-swatch" style="background:#fbbf24"></span>C</button>
         <button class="d-tool-btn" data-d-player="QB" id="d-btn-qb" style="display:none"><span class="d-swatch" style="background:#dc2626"></span>QB</button>
       </div>
+      <div class="d-tool-group">
+        <span class="d-tool-label">MODO</span>
+        <button class="d-tool-btn d-mode active" id="d-mode-route">✏ RUTA</button>
+        <button class="d-tool-btn d-mode" id="d-mode-motion">〰 MOTION</button>
+      </div>
+      <div class="d-tool-group">
+        <button class="d-tool-btn" id="d-anim-btn">▶ ANIMAR</button>
+      </div>
       <div style="flex:1"></div>
       <div class="d-tool-group">
+        <button class="d-tool-btn d-toggle" id="d-toggle-grid">⊞ CUADRÍCULA</button>
+        <button class="d-tool-btn d-toggle" id="d-toggle-curves">⌒ CURVAS</button>
+        <button class="d-tool-btn d-toggle" id="d-toggle-depths">📏 PROFUNDIDAD</button>
         <button class="d-tool-btn d-toggle active" id="d-toggle-zones">👁 ZONAS</button>
         <button class="d-tool-btn d-toggle" id="d-toggle-defense">🛡 EMULAR DEFENSA</button>
         <button class="d-tool-btn d-toggle" id="d-toggle-2qb">🏈 DOBLE QB</button>
@@ -287,6 +426,8 @@
     <div class="d-panel">
       <div class="d-panel-num">03 · JUGADORES</div>
       <div class="d-players-list" id="d-players-list"></div>
+      <div class="d-panel-num" style="margin-top:.8rem">BIBLIOTECA DE RUTAS · aplica al jugador seleccionado</div>
+      <div class="d-route-lib" id="d-route-lib"></div>
     </div>
 
     <div class="d-panel">
@@ -314,6 +455,10 @@
         <button class="d-tool-btn" id="d-export-btn" style="flex:1">⬇ EXPORTAR JSON</button>
         <button class="d-tool-btn" id="d-import-btn" style="flex:1">⬆ IMPORTAR JSON</button>
       </div>
+      <div class="d-save-row" style="margin-top:.5rem">
+        <button class="d-tool-btn" id="d-wristband-btn" style="flex:1;justify-content:center;background:var(--accent-4);color:#fff;border-color:var(--accent-4)">🖨 WRISTBAND</button>
+        <button class="d-tool-btn" id="d-compare-btn" style="flex:1;justify-content:center">⚖ COMPARAR</button>
+      </div>
       <input type="file" id="d-import-file" accept="application/json" style="display:none">
       <div class="d-saved-list" id="d-saved-list"></div>
     </div>
@@ -321,6 +466,83 @@
   </div>
 </div>
 
+<!-- ================= MODAL WRISTBAND ================= -->
+<div class="wb-overlay" id="wb-overlay">
+  <div class="wb-modal">
+    <div class="wb-modal-head">
+      <h2>WRISTBAND · IMPRIMIR JUGADAS</h2>
+      <button class="wb-x" id="wb-close">✕</button>
+    </div>
+    <div class="wb-modal-body">
+      <div class="wb-col">
+        <div class="wb-section">
+          <h4>01 · DISTRIBUCIÓN POR TARJETA</h4>
+          <div class="wb-layouts" id="wb-layouts"></div>
+        </div>
+        <div class="wb-section">
+          <h4>02 · JUGADAS A INCLUIR</h4>
+          <div class="wb-toolbar">
+            <button class="wb-mini-btn" id="wb-select-all">Todas</button>
+            <button class="wb-mini-btn" id="wb-select-none">Ninguna</button>
+            <span class="wb-count" id="wb-count">0 seleccionadas</span>
+          </div>
+          <div class="wb-plays" id="wb-plays"></div>
+        </div>
+      </div>
+      <div class="wb-col">
+        <div class="wb-section">
+          <h4>03 · DIMENSIONES (pulgadas)</h4>
+          <div class="wb-opt-row"><label>Ancho</label><div class="wb-chips" id="wb-width"></div></div>
+          <div class="wb-opt-row"><label>Alto</label><div class="wb-chips" id="wb-height"></div></div>
+        </div>
+        <div class="wb-section">
+          <h4>04 · ESTILO</h4>
+          <div class="wb-opt-row"><label>Grosor ruta</label><div class="wb-chips" id="wb-weight"></div></div>
+          <div class="wb-opt-row"><label>Etiqueta</label><div class="wb-chips" id="wb-label"></div></div>
+          <div class="wb-opt-row"><label>Zonas</label><div class="wb-chips" id="wb-zones"></div></div>
+          <div class="wb-opt-row"><label>Copias</label><div class="wb-chips" id="wb-copies"></div></div>
+        </div>
+        <div class="wb-section">
+          <h4>05 · VISTA PREVIA</h4>
+          <div class="wb-preview" id="wb-preview"></div>
+        </div>
+      </div>
+    </div>
+    <div class="wb-modal-foot">
+      <span id="wb-summary" class="wb-summary"></span>
+      <button class="wb-print-btn" id="wb-print">🖨 IMPRIMIR / GUARDAR PDF</button>
+    </div>
+  </div>
+</div>
+<div id="wb-print-area"></div>
+
+<!-- ================= MODAL COMPARAR JUGADAS ================= -->
+<div class="wb-overlay" id="cmp-overlay">
+  <div class="wb-modal" style="width:min(1100px,100%)">
+    <div class="wb-modal-head">
+      <h2>COMPARAR JUGADAS</h2>
+      <button class="wb-x" id="cmp-close">✕</button>
+    </div>
+    <div class="wb-modal-body" style="grid-template-columns:1fr 1fr">
+      <div class="wb-col">
+        <div class="wb-section">
+          <h4>JUGADA A</h4>
+          <select class="d-select" id="cmp-sel-a" style="width:100%;margin-bottom:.6rem"></select>
+          <div class="cmp-diagram" id="cmp-dia-a"></div>
+          <div class="cmp-info" id="cmp-info-a"></div>
+        </div>
+      </div>
+      <div class="wb-col">
+        <div class="wb-section">
+          <h4>JUGADA B</h4>
+          <select class="d-select" id="cmp-sel-b" style="width:100%;margin-bottom:.6rem"></select>
+          <div class="cmp-diagram" id="cmp-dia-b"></div>
+          <div class="cmp-info" id="cmp-info-b"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 'use strict';
@@ -382,8 +604,77 @@ const dState = {
   mirror: false,
   doubleQB: false,
   secondPasser: 'C',
-  snapTo: 'QB'
+  snapTo: 'QB',
+  snapGrid: false,
+  drawMode: 'route',                                  // 'route' | 'motion'
+  motions: { X: [], H: [], Y: [], C: [], QB: [] },    // movimiento pre-snap por jugador
+  smoothCurves: false,                                // rutas con curvas suaves
+  showDepths: false,                                  // etiquetas de profundidad en endpoints
+  drag: null,                                         // { player, type, index } durante arrastre
+  anim: { running: false, progress: 1, raf: null }    // estado de animación (progress 0..1)
 };
+
+const D_GRID = 15; // tamaño de celda de la cuadrícula (1.5y)
+
+// ==================== BIBLIOTECA DE RUTAS ====================
+// Cada preset: (start, dirIn) => array de puntos. dirIn = +1 si el centro está a la derecha.
+const D_ROUTE_LIB = {
+  go:       { name:'VERTICAL', fn:(s,di)=>[{x:s.x,y:s.y-185}] },
+  hitch:    { name:'PARO',     fn:(s,di)=>[{x:s.x,y:s.y-58},{x:s.x,y:s.y-48}] },
+  slant:    { name:'DIAGONAL', fn:(s,di)=>[{x:s.x+di*18,y:s.y-22},{x:s.x+di*95,y:s.y-72}] },
+  out:      { name:'AFUERA',   fn:(s,di)=>[{x:s.x,y:s.y-72},{x:s.x-di*85,y:s.y-74}] },
+  in:       { name:'ADENTRO',  fn:(s,di)=>[{x:s.x,y:s.y-72},{x:s.x+di*110,y:s.y-74}] },
+  curl:     { name:'CURL',     fn:(s,di)=>[{x:s.x,y:s.y-92},{x:s.x+di*14,y:s.y-76}] },
+  corner:   { name:'ESQUINA',  fn:(s,di)=>[{x:s.x,y:s.y-82},{x:s.x-di*95,y:s.y-155}] },
+  post:     { name:'POSTE',    fn:(s,di)=>[{x:s.x,y:s.y-82},{x:s.x+di*95,y:s.y-165}] },
+  drag:     { name:'ARRASTRE', fn:(s,di)=>[{x:s.x+di*30,y:s.y-26},{x:s.x+di*230,y:s.y-32}] },
+  dig:      { name:'DIG 10y',  fn:(s,di)=>[{x:s.x,y:s.y-100},{x:s.x+di*135,y:s.y-100}] },
+  flat:     { name:'FLAT',     fn:(s,di)=>[{x:s.x-di*45,y:s.y-16},{x:s.x-di*120,y:s.y-30}] },
+  comeback: { name:'COMEBACK', fn:(s,di)=>[{x:s.x,y:s.y-135},{x:s.x-di*38,y:s.y-112}] },
+  wheel:    { name:'WHEEL',    fn:(s,di)=>[{x:s.x-di*48,y:s.y-22},{x:s.x-di*66,y:s.y-160}] }
+};
+
+// Genera el path SVG; suave (Catmull-Rom→Bézier) si smoothCurves está activo
+function dPathD(pts, smooth) {
+  if (pts.length < 2) return pts.length ? `M ${pts[0].x} ${pts[0].y}` : '';
+  if (!smooth || pts.length < 3) {
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 1; i < pts.length; i++) d += ` L ${pts[i].x} ${pts[i].y}`;
+    return d;
+  }
+  let d = `M ${pts[0].x} ${pts[0].y}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i-1] || pts[i], p1 = pts[i], p2 = pts[i+1], p3 = pts[i+2] || p2;
+    const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
+    const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y}`;
+  }
+  return d;
+}
+
+// Recorta una polilínea a una fracción (0..1) de su longitud total — para animación
+function dClipPolyline(pts, frac) {
+  if (frac >= 1 || pts.length < 2) return pts;
+  if (frac <= 0) return [pts[0]];
+  let total = 0;
+  for (let i = 1; i < pts.length; i++) total += Math.hypot(pts[i].x-pts[i-1].x, pts[i].y-pts[i-1].y);
+  const target = total * frac;
+  const out = [pts[0]];
+  let acc = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const seg = Math.hypot(pts[i].x-pts[i-1].x, pts[i].y-pts[i-1].y);
+    if (acc + seg >= target) {
+      const r = seg === 0 ? 0 : (target - acc) / seg;
+      out.push({ x: pts[i-1].x + (pts[i].x-pts[i-1].x)*r, y: pts[i-1].y + (pts[i].y-pts[i-1].y)*r });
+      return out;
+    }
+    acc += seg; out.push(pts[i]);
+  }
+  return out;
+}
+// Fracciones de la línea de tiempo de animación: 0–35% motion, 35–100% rutas
+function dMotionFrac() { return Math.max(0, Math.min(1, dState.anim.progress / 0.35)); }
+function dRouteFrac()  { return Math.max(0, Math.min(1, (dState.anim.progress - 0.35) / 0.65)); }
 
 // ==================== HELPERS ====================
 function dYToYards(y) { return Math.max(0, Math.round((D_FIELD.losY - y) / 10)); }
@@ -393,6 +684,18 @@ function dGetStart(p) {
   return dState.mirror ? { x: 600 - pos.x, y: pos.y } : pos;
 }
 function dGetQB() { return dGetStart('QB'); }
+function dHasMotion(p) { return dState.motions[p] && dState.motions[p].length > 0; }
+// Punto donde EMPIEZA la ruta post-snap: fin del motion si existe, si no la alineación.
+function dRouteStart(p) {
+  const m = dState.motions[p];
+  if (m && m.length > 0) return m[m.length - 1];
+  return dGetStart(p);
+}
+// Aplica snap-to-grid a un punto si la cuadrícula está activa
+function dSnapPoint(pt) {
+  if (!dState.snapGrid) return pt;
+  return { x: Math.round(pt.x / D_GRID) * D_GRID, y: Math.round(pt.y / D_GRID) * D_GRID };
+}
 function dIsSecondPasser(p) { return dState.doubleQB && p === dState.secondPasser; }
 // Lista de jugadores con rol receptor activo (route runners)
 // Normal: todos menos el snap recipient (primer pasador)
@@ -407,6 +710,7 @@ function dFlipRoutes() {
   dState.mirror = !dState.mirror;
   ['X','H','Y','C','QB'].forEach(p => {
     dState.routes[p] = (dState.routes[p] || []).map(pt => ({ x: 600 - pt.x, y: pt.y }));
+    dState.motions[p] = (dState.motions[p] || []).map(pt => ({ x: 600 - pt.x, y: pt.y }));
   });
 }
 function dGetSide(point) { return point && point.x < 300 ? 'L' : 'R'; }
@@ -436,7 +740,7 @@ function dPlayerEndZone(p) { return dZoneOf(dGetEnd(p)); }
 function dIsCrosser(p) {
   const r = dState.routes[p];
   if (!r || r.length < 1) return false;
-  const start = dGetStart(p);
+  const start = dRouteStart(p); // relativo al inicio de la ruta (post-motion)
   const end = r[r.length - 1];
   const horizMove = Math.abs(end.x - start.x);
   const vertMove = Math.abs(end.y - start.y);
@@ -444,7 +748,7 @@ function dIsCrosser(p) {
 }
 function dCrosserDirection(p) {
   if (!dIsCrosser(p)) return null;
-  const s = dGetStart(p), e = dGetEnd(p);
+  const s = dRouteStart(p), e = dGetEnd(p);
   return e.x > s.x ? 'R' : 'L';
 }
 function dSegmentsIntersect(p1, p2, p3, p4) {
@@ -524,11 +828,11 @@ const D_CONCEPTS = {
     description: 'Drag 2y + Dig 10y misma dirección. Pick natural vs man.',
     rules: [
       { id:'shallow_drag', title:'SHALLOW/DRAG a 1-3y cruzando', detail:'Horizontal paralelo a LOS',
-        validate: (P) => (P||dGetActivePlayers()).some(p => { const d = dGetEndDepth(p); if (d < 1 || d > 3) return false; const s = dGetStart(p), e = dGetEnd(p); return Math.abs(e.x - s.x) > 100; }) },
+        validate: (P) => (P||dGetActivePlayers()).some(p => { const d = dGetEndDepth(p); if (d < 1 || d > 3) return false; const s = dRouteStart(p), e = dGetEnd(p); return Math.abs(e.x - s.x) > 100; }) },
       { id:'dig_behind', title:'DIG a 8-12y detrás del shallow', detail:'Misma dirección',
-        validate: (P) => (P||dGetActivePlayers()).some(p => { const d = dGetEndDepth(p); if (d < 8 || d > 12) return false; const s = dGetStart(p), e = dGetEnd(p); return Math.abs(e.x - s.x) > 100; }) },
+        validate: (P) => (P||dGetActivePlayers()).some(p => { const d = dGetEndDepth(p); if (d < 8 || d > 12) return false; const s = dRouteStart(p), e = dGetEnd(p); return Math.abs(e.x - s.x) > 100; }) },
       { id:'same_direction', title:'Shallow y Dig misma dirección', detail:'Ambas al mismo lado',
-        validate: (P) => { const players = P||dGetActivePlayers(); const sh = players.find(p => { const d = dGetEndDepth(p); const s = dGetStart(p), e = dGetEnd(p); return d >= 1 && d <= 3 && Math.abs(e.x - s.x) > 100; }); const di = players.find(p => { const d = dGetEndDepth(p); const s = dGetStart(p), e = dGetEnd(p); return d >= 8 && d <= 12 && Math.abs(e.x - s.x) > 100; }); if (!sh || !di) return false; return Math.sign(dGetEnd(sh).x - dGetStart(sh).x) === Math.sign(dGetEnd(di).x - dGetStart(di).x); } }
+        validate: (P) => { const players = P||dGetActivePlayers(); const sh = players.find(p => { const d = dGetEndDepth(p); const s = dRouteStart(p), e = dGetEnd(p); return d >= 1 && d <= 3 && Math.abs(e.x - s.x) > 100; }); const di = players.find(p => { const d = dGetEndDepth(p); const s = dRouteStart(p), e = dGetEnd(p); return d >= 8 && d <= 12 && Math.abs(e.x - s.x) > 100; }); if (!sh || !di) return false; return Math.sign(dGetEnd(sh).x - dRouteStart(sh).x) === Math.sign(dGetEnd(di).x - dRouteStart(di).x); } }
     ]
   },
   smash: {
@@ -548,7 +852,7 @@ const D_CONCEPTS = {
     description: 'Cruce a 12y. MVP del Air Raid.',
     rules: [
       { id:'cross_route', title:'CROSS a 10-14y horizontal', detail:'Una ruta horizontal media-alta',
-        validate: (P) => (P||dGetActivePlayers()).some(p => { const d = dGetEndDepth(p); if (d < 10 || d > 14) return false; const s = dGetStart(p), e = dGetEnd(p); return Math.abs(e.x - s.x) > 200; }) },
+        validate: (P) => (P||dGetActivePlayers()).some(p => { const d = dGetEndDepth(p); if (d < 10 || d > 14) return false; const s = dRouteStart(p), e = dGetEnd(p); return Math.abs(e.x - s.x) > 200; }) },
       { id:'cross_clearing', title:'POST/GO clearing del medio', detail:'Ruta vertical alta',
         validate: (P) => (P||dGetActivePlayers()).some(p => dGetEndDepth(p) >= 15) },
       { id:'shallow_underneath', title:'Ruta corta (FLAT/SWING)', detail:'Amenaza baja',
@@ -573,19 +877,19 @@ const D_CONCEPTS = {
 // Cada rol asume 1 jugador en el lado débil. La validación toma SOLO ese jugador (el más solo en el lado débil).
 const D_BACKSIDE = {
   drag:  { name:'ARRASTRE (DRAG)', description:'Cruce corto 2-4y desde el lado débil.',
-           validate:(p) => { if (!p) return false; const d = dGetEndDepth(p); const s = dGetStart(p), e = dGetEnd(p); return d >= 1 && d <= 4 && Math.abs(e.x - s.x) > 120; } },
+           validate:(p) => { if (!p) return false; const d = dGetEndDepth(p); const s = dRouteStart(p), e = dGetEnd(p); return d >= 1 && d <= 4 && Math.abs(e.x - s.x) > 120; } },
   dig:   { name:'INTERIOR (DIG)', description:'Ruta interior a 9-11y. Ocupa al apoyador medio.',
-           validate:(p) => { if (!p) return false; const d = dGetEndDepth(p); const s = dGetStart(p), e = dGetEnd(p); return d >= 8 && d <= 12 && Math.abs(e.x - s.x) > 60; } },
+           validate:(p) => { if (!p) return false; const d = dGetEndDepth(p); const s = dRouteStart(p), e = dGetEnd(p); return d >= 8 && d <= 12 && Math.abs(e.x - s.x) > 60; } },
   hitch: { name:'PARO (HITCH)', description:'5y se sienta. Respaldo seguro.',
-           validate:(p) => { if (!p) return false; const d = dGetEndDepth(p); const s = dGetStart(p), e = dGetEnd(p); return d >= 4 && d <= 6 && Math.abs(e.x - s.x) < 50; } },
+           validate:(p) => { if (!p) return false; const d = dGetEndDepth(p); const s = dRouteStart(p), e = dGetEnd(p); return d >= 4 && d <= 6 && Math.abs(e.x - s.x) < 50; } },
   go:    { name:'VERTICAL (GO)', description:'Vertical 18y+. Aleja al safety.',
            validate:(p) => { if (!p) return false; return dGetEndDepth(p) >= 15; } },
   post:  { name:'POSTE (POST)', description:'15y+ interior. Ataca el medio profundo.',
            validate:(p) => { if (!p) return false; const d = dGetEndDepth(p); const e = dGetEnd(p); return d >= 14 && e.x >= 200 && e.x <= 400; } },
   slant: { name:'DIAGONAL (SLANT)', description:'5y a 45° hacia el medio. Caliente vs blitz.',
-           validate:(p) => { if (!p) return false; const d = dGetEndDepth(p); const s = dGetStart(p), e = dGetEnd(p); return d >= 4 && d <= 7 && Math.abs(e.x - s.x) > 30 && Math.abs(e.x - s.x) < 120; } },
+           validate:(p) => { if (!p) return false; const d = dGetEndDepth(p); const s = dRouteStart(p), e = dGetEnd(p); return d >= 4 && d <= 7 && Math.abs(e.x - s.x) > 30 && Math.abs(e.x - s.x) < 120; } },
   out:   { name:'AFUERA (OUT)', description:'7-9y a la banda. Quita defensor corto.',
-           validate:(p) => { if (!p) return false; const d = dGetEndDepth(p); const s = dGetStart(p), e = dGetEnd(p); return d >= 7 && d <= 10 && Math.abs(e.x - s.x) > 60; } }
+           validate:(p) => { if (!p) return false; const d = dGetEndDepth(p); const s = dRouteStart(p), e = dGetEnd(p); return d >= 7 && d <= 10 && Math.abs(e.x - s.x) > 60; } }
 };
 
 // ==================== COVERAGES ====================
@@ -709,7 +1013,7 @@ function simulateCoverage(covKey) {
   players.forEach((p, idx) => {
     if (idx >= manDefenders.length) return;
     const end = dGetEnd(p);
-    const start = dGetStart(p);
+    const start = dRouteStart(p);
     const horizMove = Math.abs(end.x - start.x);
     const startDeep = start.y < 140;
     const endDeep = end.y < 140;
@@ -771,6 +1075,13 @@ function simulateCoverage(covKey) {
 // ==================== RENDERING ====================
 const dField = document.getElementById('d-field');
 
+// Helper para crear elementos SVG con atributos
+function svgElNS(ns, name, attrs) {
+  const el = document.createElementNS(ns, name);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+}
+
 function dRender() {
   if (!dField) return;
   const ns = 'http://www.w3.org/2000/svg';
@@ -800,6 +1111,16 @@ function dRender() {
   bg.setAttribute('fill', '#0c1018');
   bg.setAttribute('stroke', '#9aa3b8'); bg.setAttribute('stroke-width', '1.5');
   dField.appendChild(bg);
+
+  // CUADRÍCULA (snap-to-grid) — sólo visible cuando está activa
+  if (dState.snapGrid) {
+    for (let gx = 20; gx <= 580; gx += D_GRID) {
+      dField.appendChild(svgElNS(ns, 'line', { x1:gx, y1:20, x2:gx, y2:350, stroke:'#ffffff', 'stroke-opacity':0.05, 'stroke-width':0.5 }));
+    }
+    for (let gy = 20; gy <= 350; gy += D_GRID) {
+      dField.appendChild(svgElNS(ns, 'line', { x1:20, y1:gy, x2:580, y2:gy, stroke:'#ffffff', 'stroke-opacity':0.05, 'stroke-width':0.5 }));
+    }
+  }
 
   // 5 ZONES (background fill, opcional)
   if (dState.showZones) {
@@ -1020,17 +1341,52 @@ function dRender() {
     });
   }
 
+  // MOTIONS (movimiento pre-snap) — línea punteada con guiones largos
+  const allPlayers = dState.doubleQB ? ['X','H','Y','C','QB'] : ['X','H','Y','C'];
+  const animOn = dState.anim.running;
+  allPlayers.forEach(p => {
+    const motion = dState.motions[p];
+    if (!motion || motion.length === 0) return;
+    const mStart = dGetStart(p);
+    let mPoints = [mStart, ...motion];
+    if (animOn) mPoints = dClipPolyline(mPoints, dMotionFrac());
+    const mPath = svgElNS(ns, 'path', {
+      d: dPathD(mPoints, false), fill:'none',
+      stroke: (p === 'QB') ? D_QB_COLOR : D_COLORS[p],
+      'stroke-width': 2,
+      'stroke-dasharray': '1 6', 'stroke-linecap':'round',
+      opacity: 0.7
+    });
+    dField.appendChild(mPath);
+    if (!animOn) {
+      // marcador de fin de motion (donde arranca la ruta)
+      const me = motion[motion.length - 1];
+      dField.appendChild(svgElNS(ns, 'circle', {
+        cx: me.x, cy: me.y, r: 4, fill:'none',
+        stroke: (p === 'QB') ? D_QB_COLOR : D_COLORS[p], 'stroke-width':1.5, opacity:0.8
+      }));
+      // handles de motion arrastrables
+      motion.forEach((pt, i) => {
+        const h = svgElNS(ns, 'circle', { cx:pt.x, cy:pt.y, r:4, fill:(p==='QB')?D_QB_COLOR:D_COLORS[p], stroke:'#fff', 'stroke-width':1, opacity:0.7 });
+        h.style.cursor = 'grab';
+        h.setAttribute('data-drag-player', p);
+        h.setAttribute('data-drag-type', 'motion');
+        h.setAttribute('data-drag-index', i);
+        dField.appendChild(h);
+      });
+    }
+  });
+
   // Routes (incluye QB cuando doubleQB está activo)
   const routePlayers = dState.doubleQB ? ['X','H','Y','C','QB'] : ['X','H','Y','C'];
   routePlayers.forEach(p => {
     const route = dState.routes[p];
     if (!route || route.length === 0) return;
-    const start = dGetStart(p);
-    const allPoints = [start, ...route];
-    let d = `M ${start.x} ${start.y}`;
-    for (let i = 1; i < allPoints.length; i++) d += ` L ${allPoints[i].x} ${allPoints[i].y}`;
+    const start = dRouteStart(p); // la ruta arranca del fin del motion si existe
+    let allPoints = [start, ...route];
+    if (animOn) allPoints = dClipPolyline(allPoints, dRouteFrac());
     const path = document.createElementNS(ns, 'path');
-    path.setAttribute('d', d); path.setAttribute('fill', 'none');
+    path.setAttribute('d', dPathD(allPoints, dState.smoothCurves)); path.setAttribute('fill', 'none');
     const isPasser = dIsSecondPasser(p);
     const isPrimary = p === dSnapTo();
     const color = (p === 'QB') ? D_QB_COLOR : D_COLORS[p];
@@ -1065,15 +1421,27 @@ function dRender() {
       pLbl.textContent = 'PITCH';
       dField.appendChild(pLbl);
     }
-    // intermediate dots
-    route.forEach((pt, i) => {
-      if (i < route.length - 1) {
-        const c = document.createElementNS(ns, 'circle');
-        c.setAttribute('cx', pt.x); c.setAttribute('cy', pt.y); c.setAttribute('r', 2.5);
-        c.setAttribute('fill', D_COLORS[p]); c.setAttribute('opacity', '0.5');
-        dField.appendChild(c);
+    // Handles arrastrables de cada punto de la ruta (ocultos durante animación)
+    if (!animOn) {
+      route.forEach((pt, i) => {
+        const h = svgElNS(ns, 'circle', { cx:pt.x, cy:pt.y, r:5, fill:color, stroke:'#fff', 'stroke-width':1.2, opacity:0.9 });
+        h.style.cursor = 'grab';
+        h.setAttribute('data-drag-player', p);
+        h.setAttribute('data-drag-type', 'route');
+        h.setAttribute('data-drag-index', i);
+        dField.appendChild(h);
+      });
+      // Etiqueta de profundidad en el endpoint
+      if (dState.showDepths) {
+        const e = route[route.length - 1];
+        const depth = dYToYards(e.y);
+        const bg = svgElNS(ns, 'rect', { x:e.x+8, y:e.y-18, width:depth>9?30:24, height:14, rx:3, fill:'#06080d', stroke:color, 'stroke-width':1, opacity:0.95 });
+        dField.appendChild(bg);
+        const t = svgElNS(ns, 'text', { x:e.x+(depth>9?23:20), y:e.y-7, fill:color, 'font-size':10, 'font-weight':900, 'text-anchor':'middle', 'font-family':'SF Mono, Menlo, Consolas, monospace' });
+        t.textContent = depth + 'y';
+        dField.appendChild(t);
       }
-    });
+    }
 
     // Highlight open vs covered (vs cover seleccionada)
     if (dState.showDefense) {
@@ -1181,24 +1549,110 @@ function dGetSvgPoint(e) {
 function dPushHistory() {
   dState.history.push({
     routes: JSON.parse(JSON.stringify(dState.routes)),
+    motions: JSON.parse(JSON.stringify(dState.motions)),
     mirror: dState.mirror,
     snapTo: dState.snapTo,
     secondPasser: dState.secondPasser
   });
   if (dState.history.length > 50) dState.history.shift();
 }
+// --- ARRASTRE de puntos existentes ---
+let dDragMoved = false;
+dField.addEventListener('pointerdown', (e) => {
+  const t = e.target;
+  if (t && t.hasAttribute && t.hasAttribute('data-drag-player')) {
+    dState.drag = {
+      player: t.getAttribute('data-drag-player'),
+      type: t.getAttribute('data-drag-type'),
+      index: parseInt(t.getAttribute('data-drag-index'), 10)
+    };
+    dDragMoved = false;
+    dPushHistory();
+    e.preventDefault();
+    try { dField.setPointerCapture(e.pointerId); } catch(_) {}
+  }
+});
+dField.addEventListener('pointermove', (e) => {
+  if (!dState.drag) return;
+  let pt = dSnapPoint(dGetSvgPoint(e));
+  pt.x = Math.max(20, Math.min(580, pt.x));
+  pt.y = Math.max(20, Math.min(345, pt.y));
+  const arr = dState.drag.type === 'motion' ? dState.motions[dState.drag.player] : dState.routes[dState.drag.player];
+  if (arr && arr[dState.drag.index]) {
+    arr[dState.drag.index] = pt;
+    dDragMoved = true;
+    dRender();
+  }
+});
+dField.addEventListener('pointerup', (e) => {
+  if (dState.drag) {
+    dState.drag = null;
+    if (dDragMoved) dValidateAll();
+    try { dField.releasePointerCapture(e.pointerId); } catch(_) {}
+  }
+});
+
 dField.addEventListener('click', (e) => {
-  const pt = dGetSvgPoint(e);
-  // Primer pasador (receptor del snap) y pasador 2° pueden dibujar movimiento DETRÁS de la LDE
+  // Si se acaba de arrastrar un punto, no agregar uno nuevo
+  if (dDragMoved) { dDragMoved = false; return; }
+  if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-drag-player')) return;
+  if (dState.anim.running) return; // sin edición durante animación
+  let pt = dGetSvgPoint(e);
+  pt = dSnapPoint(pt); // snap-to-grid si está activo
   const sp = dState.selectedPlayer;
-  const canDropBack = dIsSecondPasser(sp) || sp === dSnapTo();
-  const maxY = canDropBack ? D_FIELD.losY + 105 : D_FIELD.losY - 5;
-  if (pt.y > maxY) return;
-  if (pt.x < 20 || pt.x > 580 || pt.y < 20) return;
+  if (dState.drawMode === 'motion') {
+    if (pt.x < 20 || pt.x > 580 || pt.y < 20 || pt.y > 345) return;
+    dPushHistory();
+    dState.motions[sp].push(pt);
+    dRender(); dValidateAll();
+    return;
+  }
+  if (pt.x < 20 || pt.x > 580 || pt.y < 20 || pt.y > 345) return;
   dPushHistory();
-  dState.routes[dState.selectedPlayer].push(pt);
+  dState.routes[sp].push(pt);
   dRender(); dValidateAll();
 });
+
+// --- BIBLIOTECA DE RUTAS: aplica un preset al jugador seleccionado ---
+function dApplyRoutePreset(key) {
+  const preset = D_ROUTE_LIB[key];
+  if (!preset) return;
+  const p = dState.selectedPlayer;
+  const start = dRouteStart(p);
+  const dirIn = start.x < 300 ? 1 : -1; // hacia el centro
+  let pts = preset.fn(start, dirIn).map(pt => ({
+    x: Math.max(20, Math.min(580, pt.x)),
+    y: Math.max(20, Math.min(345, pt.y))
+  }));
+  if (dState.snapGrid) pts = pts.map(dSnapPoint);
+  dPushHistory();
+  dState.routes[p] = pts;
+  dRender(); dValidateAll();
+}
+
+// --- ANIMACIÓN de la jugada ---
+function dPlayAnimation() {
+  if (dState.anim.running) return;
+  dState.anim.running = true;
+  dState.anim.progress = 0;
+  const btn = document.getElementById('d-anim-btn');
+  if (btn) btn.textContent = '⏸ ANIMANDO';
+  const duration = 2600; // ms
+  const t0 = performance.now();
+  function frame(now) {
+    dState.anim.progress = Math.min(1, (now - t0) / duration);
+    dRender();
+    if (dState.anim.progress < 1) {
+      dState.anim.raf = requestAnimationFrame(frame);
+    } else {
+      dState.anim.running = false;
+      dState.anim.progress = 1;
+      if (btn) btn.textContent = '▶ ANIMAR';
+      dRender();
+    }
+  }
+  dState.anim.raf = requestAnimationFrame(frame);
+}
 
 // ==================== UI WIRING ====================
 function dPopulateSelects() {
@@ -1248,6 +1702,19 @@ function dPopulateCovList() {
       dRender();
     });
     list.appendChild(row);
+  });
+}
+
+function dPopulateRouteLib() {
+  const cont = document.getElementById('d-route-lib');
+  if (!cont) return;
+  cont.innerHTML = '';
+  Object.entries(D_ROUTE_LIB).forEach(([key, r]) => {
+    const btn = document.createElement('button');
+    btn.className = 'd-route-btn';
+    btn.textContent = r.name;
+    btn.addEventListener('click', () => dApplyRoutePreset(key));
+    cont.appendChild(btn);
   });
 }
 
@@ -1304,20 +1771,21 @@ function dUpdatePlayersList() {
 function dUpdateHint() {
   const hint = document.getElementById('d-hint');
   const sp = dState.selectedPlayer;
-  if (dIsSecondPasser(sp)) {
+  if (dState.drawMode === 'motion') {
+    hint.textContent = `MOTION · ${sp} · clickea el movimiento pre-snap · la ruta arrancará desde el final del motion`;
+  } else if (dIsSecondPasser(sp)) {
     hint.textContent = `Jugador ${sp} · DROPBACK · clickea DETRÁS de la LDE para el pocket`;
   } else if (sp === dSnapTo()) {
     hint.textContent = `${sp} recibe el snap · puede moverse antes de lanzar (delante o detrás de la LDE)`;
-  } else if (sp === 'QB') {
-    hint.textContent = `QB libre como receptor · clickea delante de la LDE`;
   } else {
-    hint.textContent = `Jugador ${sp} · Click en el campo para agregar puntos de ruta`;
+    hint.textContent = `RUTA · ${sp} · click para agregar puntos · puede hacer dropback y luego correr ruta`;
   }
 }
 
 function dClearPlayer(p) {
   dPushHistory();
   dState.routes[p] = [];
+  dState.motions[p] = [];
   dRender(); dValidateAll();
 }
 
@@ -1570,13 +2038,17 @@ function dPersistAuto() {
     localStorage.setItem(D_STORAGE_KEY, JSON.stringify({
       formation: dState.formation,
       routes: dState.routes,
+      motions: dState.motions,
       concepts: dState.concepts,
       showZones: dState.showZones,
       selectedCoverage: dState.selectedCoverage,
       doubleQB: dState.doubleQB,
       secondPasser: dState.secondPasser,
       mirror: dState.mirror,
-      snapTo: dState.snapTo
+      snapTo: dState.snapTo,
+      snapGrid: dState.snapGrid,
+      smoothCurves: dState.smoothCurves,
+      showDepths: dState.showDepths
     }));
   } catch (_) {}
 }
@@ -1590,6 +2062,10 @@ function dLoadAuto() {
       dState.routes = { X:[], H:[], Y:[], C:[], QB:[] };
       Object.assign(dState.routes, s.routes);
     }
+    if (s.motions) {
+      dState.motions = { X:[], H:[], Y:[], C:[], QB:[] };
+      Object.assign(dState.motions, s.motions);
+    }
     if (s.concepts) dState.concepts = s.concepts;
     if (typeof s.showZones === 'boolean') dState.showZones = s.showZones;
     if (s.selectedCoverage) dState.selectedCoverage = s.selectedCoverage;
@@ -1597,6 +2073,9 @@ function dLoadAuto() {
     if (s.secondPasser) dState.secondPasser = s.secondPasser;
     if (typeof s.mirror === 'boolean') dState.mirror = s.mirror;
     if (s.snapTo) dState.snapTo = s.snapTo;
+    if (typeof s.snapGrid === 'boolean') dState.snapGrid = s.snapGrid;
+    if (typeof s.smoothCurves === 'boolean') dState.smoothCurves = s.smoothCurves;
+    if (typeof s.showDepths === 'boolean') dState.showDepths = s.showDepths;
   } catch (_) {}
 }
 function dGetSaved() {
@@ -1614,6 +2093,7 @@ function dSavePlay() {
     name,
     formation: dState.formation,
     routes: JSON.parse(JSON.stringify(dState.routes)),
+    motions: JSON.parse(JSON.stringify(dState.motions)),
     concepts: { ...dState.concepts },
     mirror: dState.mirror,
     snapTo: dState.snapTo,
@@ -1634,6 +2114,8 @@ function dLoadPlay(id) {
   dState.formation = item.formation;
   dState.routes = JSON.parse(JSON.stringify(item.routes));
   if (!dState.routes.QB) dState.routes.QB = [];
+  dState.motions = item.motions ? JSON.parse(JSON.stringify(item.motions)) : { X:[], H:[], Y:[], C:[], QB:[] };
+  if (!dState.motions.QB) dState.motions.QB = [];
   dState.concepts = { ...item.concepts };
   if (typeof item.mirror === 'boolean') dState.mirror = item.mirror;
   if (item.snapTo) dState.snapTo = item.snapTo;
@@ -1713,6 +2195,34 @@ document.getElementById('d-toggle-defense').addEventListener('click', (e) => {
   e.currentTarget.classList.toggle('active', dState.showDefense);
   dRender();
 });
+document.getElementById('d-toggle-grid').addEventListener('click', (e) => {
+  dState.snapGrid = !dState.snapGrid;
+  e.currentTarget.classList.toggle('active', dState.snapGrid);
+  dRender(); dPersistAuto();
+});
+document.getElementById('d-toggle-curves').addEventListener('click', (e) => {
+  dState.smoothCurves = !dState.smoothCurves;
+  e.currentTarget.classList.toggle('active', dState.smoothCurves);
+  dRender(); dPersistAuto();
+});
+document.getElementById('d-toggle-depths').addEventListener('click', (e) => {
+  dState.showDepths = !dState.showDepths;
+  e.currentTarget.classList.toggle('active', dState.showDepths);
+  dRender(); dPersistAuto();
+});
+document.getElementById('d-anim-btn').addEventListener('click', dPlayAnimation);
+document.getElementById('d-mode-route').addEventListener('click', () => {
+  dState.drawMode = 'route';
+  document.getElementById('d-mode-route').classList.add('active');
+  document.getElementById('d-mode-motion').classList.remove('active');
+  dUpdateHint();
+});
+document.getElementById('d-mode-motion').addEventListener('click', () => {
+  dState.drawMode = 'motion';
+  document.getElementById('d-mode-motion').classList.add('active');
+  document.getElementById('d-mode-route').classList.remove('active');
+  dUpdateHint();
+});
 document.getElementById('d-toggle-2qb').addEventListener('click', (e) => {
   dState.doubleQB = !dState.doubleQB;
   e.currentTarget.classList.toggle('active', dState.doubleQB);
@@ -1767,6 +2277,7 @@ document.getElementById('d-undo-btn').addEventListener('click', () => {
   // Compat: snapshots viejos eran sólo routes
   if (snap && snap.routes) {
     dState.routes = snap.routes;
+    if (snap.motions) dState.motions = snap.motions;
     if (typeof snap.mirror === 'boolean') dState.mirror = snap.mirror;
     if (snap.snapTo) dState.snapTo = snap.snapTo;
     if (snap.secondPasser) dState.secondPasser = snap.secondPasser;
@@ -1783,6 +2294,7 @@ document.getElementById('d-undo-btn').addEventListener('click', () => {
 document.getElementById('d-clear-btn').addEventListener('click', () => {
   dPushHistory();
   dState.routes = { X: [], H: [], Y: [], C: [], QB: [] };
+  dState.motions = { X: [], H: [], Y: [], C: [], QB: [] };
   dValidateAll();
 });
 document.getElementById('d-save-btn').addEventListener('click', dSavePlay);
@@ -1797,6 +2309,7 @@ document.getElementById('d-export-btn').addEventListener('click', () => {
     current: {
       formation: dState.formation,
       routes: dState.routes,
+      motions: dState.motions,
       concepts: dState.concepts,
       mirror: dState.mirror,
       snapTo: dState.snapTo,
@@ -1831,6 +2344,10 @@ document.getElementById('d-import-file').addEventListener('change', (e) => {
         if (data.current.routes) {
           dState.routes = { X:[], H:[], Y:[], C:[], QB:[] };
           Object.assign(dState.routes, data.current.routes);
+        }
+        if (data.current.motions) {
+          dState.motions = { X:[], H:[], Y:[], C:[], QB:[] };
+          Object.assign(dState.motions, data.current.motions);
         }
         if (data.current.concepts) dState.concepts = data.current.concepts;
         if (typeof data.current.mirror === 'boolean') dState.mirror = data.current.mirror;
@@ -1869,13 +2386,358 @@ document.getElementById('d-import-file').addEventListener('change', (e) => {
   e.target.value = ''; // permite reimportar el mismo archivo
 });
 
+// ==================== WRISTBAND ====================
+const WB_LAYOUTS = {
+  '1': { cols:1, rows:1, label:'1 JUGADA'  },
+  '2': { cols:2, rows:1, label:'2 JUGADAS' },
+  '3': { cols:3, rows:1, label:'3 JUGADAS' },
+  '4': { cols:2, rows:2, label:'4 JUGADAS' },
+  '6': { cols:3, rows:2, label:'6 JUGADAS' },
+  '8': { cols:4, rows:2, label:'8 JUGADAS' }
+};
+const wbState = {
+  layout: '6',
+  width: 4.5,
+  height: 2.5,
+  copies: 1,
+  routeWeight: 'medium',
+  labelMode: 'number',   // number | name | both | none
+  zones: false,
+  selected: new Set()
+};
+
+// Posición inicial de un jugador para un objeto de jugada guardada
+function wbStart(play, p) {
+  const form = D_FORMATIONS[play.formation] || D_FORMATIONS['2x1'];
+  const pos = (p === 'QB') ? form.QB : form[p];
+  if (!pos) return null;
+  return play.mirror ? { x: 600 - pos.x, y: pos.y } : pos;
+}
+function wbRouteStart(play, p) {
+  const m = play.motions && play.motions[p];
+  if (m && m.length > 0) return m[m.length - 1];
+  return wbStart(play, p);
+}
+
+// Renderiza una jugada guardada como SVG (string) para la tarjeta
+function wbPlaySVG(play, idx, opts) {
+  const W = 600, H = 360, LOS = 240;
+  const rw = opts.routeWeight === 'thin' ? 2.5 : opts.routeWeight === 'thick' ? 6 : 4;
+  let defs = '<defs>';
+  ['X','H','Y','C','QB'].forEach(p => {
+    const c = (p === 'QB') ? D_QB_COLOR : D_COLORS[p];
+    defs += `<marker id="wba-${idx}-${p}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="${c}"/></marker>`;
+  });
+  defs += '</defs>';
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">${defs}`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="#ffffff"/>`;
+  s += `<rect x="14" y="14" width="572" height="332" fill="none" stroke="#cbd5e1" stroke-width="1.5"/>`;
+  if (opts.zones) {
+    s += `<rect x="14" y="14" width="286" height="218" fill="#7c4dff" fill-opacity="0.05"/>`;
+    s += `<rect x="300" y="14" width="286" height="218" fill="#7c4dff" fill-opacity="0.05"/>`;
+    s += `<line x1="14" y1="232" x2="586" y2="232" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 4"/>`;
+  }
+  // yard hints
+  [90,140].forEach(y => { s += `<line x1="14" y1="${y}" x2="586" y2="${y}" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3 5"/>`; });
+  // LOS
+  s += `<line x1="14" y1="${LOS}" x2="586" y2="${LOS}" stroke="#0891b2" stroke-width="2.5"/>`;
+  s += `<line x1="300" y1="14" x2="300" y2="346" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="2 6"/>`;
+  // motions
+  ['X','H','Y','C','QB'].forEach(p => {
+    const m = play.motions && play.motions[p];
+    if (!m || !m.length) return;
+    const st = wbStart(play, p); if (!st) return;
+    let d = `M ${st.x} ${st.y}`;
+    m.forEach(pt => d += ` L ${pt.x} ${pt.y}`);
+    s += `<path d="${d}" fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="1 7" stroke-linecap="round"/>`;
+  });
+  // routes
+  ['X','H','Y','C','QB'].forEach(p => {
+    const r = play.routes && play.routes[p];
+    if (!r || !r.length) return;
+    const st = wbRouteStart(play, p); if (!st) return;
+    let d = `M ${st.x} ${st.y}`;
+    r.forEach(pt => d += ` L ${pt.x} ${pt.y}`);
+    const color = (p === 'QB') ? D_QB_COLOR : D_COLORS[p];
+    s += `<path d="${d}" fill="none" stroke="${color}" stroke-width="${rw}" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#wba-${idx}-${p})"/>`;
+  });
+  // players
+  ['X','H','Y','C'].forEach(p => {
+    const pos = wbStart(play, p); if (!pos) return;
+    s += `<circle cx="${pos.x}" cy="${pos.y}" r="17" fill="${D_COLORS[p]}" stroke="#000" stroke-width="2.5"/>`;
+    s += `<text x="${pos.x}" y="${pos.y+6}" font-size="18" font-weight="900" text-anchor="middle" fill="#000" font-family="Helvetica Neue,Arial,sans-serif">${p}</text>`;
+  });
+  const qb = wbStart(play, 'QB');
+  if (qb) {
+    s += `<rect x="${qb.x-16}" y="${qb.y-13}" width="32" height="26" rx="3" fill="${D_QB_COLOR}" stroke="#000" stroke-width="2.5"/>`;
+    s += `<text x="${qb.x}" y="${qb.y+5}" font-size="14" font-weight="900" text-anchor="middle" fill="#fff" font-family="Helvetica Neue,Arial,sans-serif">QB</text>`;
+  }
+  s += `</svg>`;
+  return s;
+}
+
+function wbCellHTML(play, idxGlobal, numInCard, opts) {
+  let label = '';
+  if (opts.labelMode !== 'none' && play) {
+    const num = numInCard;
+    let txt = opts.labelMode === 'number' ? `${num}`
+            : opts.labelMode === 'name' ? (play.name || `Jugada ${num}`)
+            : `${num} · ${play.name || ''}`;
+    label = `<div class="wb-cell-label">${txt}</div>`;
+  }
+  return label + (play ? wbPlaySVG(play, idxGlobal, opts) : '');
+}
+
+// Construye el área de impresión con las tarjetas
+function wbBuildPrint() {
+  const area = document.getElementById('wb-print-area');
+  area.innerHTML = '';
+  const plays = dGetSaved().filter(pl => wbState.selected.has(pl.id));
+  if (plays.length === 0) return false;
+  const layout = WB_LAYOUTS[wbState.layout];
+  const perCard = layout.cols * layout.rows;
+  const cards = [];
+  for (let i = 0; i < plays.length; i += perCard) cards.push(plays.slice(i, i + perCard));
+  const opts = { routeWeight: wbState.routeWeight, zones: wbState.zones, labelMode: wbState.labelMode };
+  let gid = 0;
+  for (let c = 0; c < wbState.copies; c++) {
+    cards.forEach(cardPlays => {
+      const page = document.createElement('div');
+      page.className = 'wb-page';
+      const card = document.createElement('div');
+      card.className = 'wb-card';
+      card.style.width = wbState.width + 'in';
+      card.style.height = wbState.height + 'in';
+      card.style.gridTemplateColumns = `repeat(${layout.cols},1fr)`;
+      card.style.gridTemplateRows = `repeat(${layout.rows},1fr)`;
+      for (let k = 0; k < perCard; k++) {
+        const cell = document.createElement('div');
+        cell.className = 'wb-card-cell';
+        const pl = cardPlays[k];
+        if (pl) cell.innerHTML = wbCellHTML(pl, gid++, k + 1, opts);
+        card.appendChild(cell);
+      }
+      page.appendChild(card);
+      area.appendChild(page);
+    });
+  }
+  return true;
+}
+
+// ---- UI del modal ----
+function wbRenderLayouts() {
+  const cont = document.getElementById('wb-layouts');
+  cont.innerHTML = '';
+  Object.entries(WB_LAYOUTS).forEach(([key, lay]) => {
+    const btn = document.createElement('button');
+    btn.className = 'wb-layout-btn' + (key === wbState.layout ? ' active' : '');
+    let cells = '';
+    for (let i = 0; i < lay.cols * lay.rows; i++) cells += '<div></div>';
+    btn.innerHTML = `<div class="wb-layout-grid" style="grid-template-columns:repeat(${lay.cols},1fr);grid-template-rows:repeat(${lay.rows},1fr)">${cells}</div><span>${lay.label}</span>`;
+    btn.addEventListener('click', () => { wbState.layout = key; wbRenderLayouts(); wbRenderPreview(); wbUpdateSummary(); });
+    cont.appendChild(btn);
+  });
+}
+function wbRenderPlays() {
+  const cont = document.getElementById('wb-plays');
+  cont.innerHTML = '';
+  const saved = dGetSaved();
+  if (saved.length === 0) {
+    cont.innerHTML = '<div class="wb-empty">No hay jugadas guardadas. Guarda jugadas con el botón 💾 GUARDAR.</div>';
+    return;
+  }
+  saved.forEach(pl => {
+    const sel = wbState.selected.has(pl.id);
+    const meta = pl.concepts ? pl.concepts.strong + (pl.doubleQB ? ' · 2QB' : '') : '';
+    const item = document.createElement('div');
+    item.className = 'wb-play-item' + (sel ? ' sel' : '');
+    item.innerHTML = `<div class="wb-play-check">${sel ? '✓' : ''}</div><div class="wb-play-name">${pl.name || 'Sin nombre'}</div><div class="wb-play-meta">${meta}</div>`;
+    item.addEventListener('click', () => {
+      if (wbState.selected.has(pl.id)) wbState.selected.delete(pl.id);
+      else wbState.selected.add(pl.id);
+      wbRenderPlays(); wbRenderPreview(); wbUpdateSummary();
+    });
+    cont.appendChild(item);
+  });
+}
+function wbChips(containerId, options, currentVal, onPick) {
+  const cont = document.getElementById(containerId);
+  cont.innerHTML = '';
+  options.forEach(opt => {
+    const chip = document.createElement('button');
+    chip.className = 'wb-chip' + (opt.val === currentVal() ? ' active' : '');
+    chip.textContent = opt.label;
+    chip.addEventListener('click', () => { onPick(opt.val); });
+    cont.appendChild(chip);
+  });
+}
+function wbRenderOptions() {
+  wbChips('wb-width', [3,3.25,3.5,3.75,4,4.25,4.5,4.75,5].map(v => ({val:v,label:v+'"'})),
+    () => wbState.width, v => { wbState.width = v; wbRenderOptions(); wbRenderPreview(); wbUpdateSummary(); });
+  wbChips('wb-height', [2,2.25,2.5,2.75,3,3.5].map(v => ({val:v,label:v+'"'})),
+    () => wbState.height, v => { wbState.height = v; wbRenderOptions(); wbRenderPreview(); wbUpdateSummary(); });
+  wbChips('wb-weight', [{val:'thin',label:'FINO'},{val:'medium',label:'MEDIO'},{val:'thick',label:'GRUESO'}],
+    () => wbState.routeWeight, v => { wbState.routeWeight = v; wbRenderOptions(); wbRenderPreview(); });
+  wbChips('wb-label', [{val:'number',label:'NÚMERO'},{val:'name',label:'NOMBRE'},{val:'both',label:'AMBOS'},{val:'none',label:'NINGUNA'}],
+    () => wbState.labelMode, v => { wbState.labelMode = v; wbRenderOptions(); wbRenderPreview(); });
+  wbChips('wb-zones', [{val:false,label:'OCULTAR'},{val:true,label:'MOSTRAR'}],
+    () => wbState.zones, v => { wbState.zones = v; wbRenderOptions(); wbRenderPreview(); });
+  wbChips('wb-copies', [1,2,3,4,5,6,8,10,12].map(v => ({val:v,label:String(v)})),
+    () => wbState.copies, v => { wbState.copies = v; wbRenderOptions(); wbUpdateSummary(); });
+}
+function wbRenderPreview() {
+  const cont = document.getElementById('wb-preview');
+  const plays = dGetSaved().filter(pl => wbState.selected.has(pl.id));
+  const layout = WB_LAYOUTS[wbState.layout];
+  const perCard = layout.cols * layout.rows;
+  if (plays.length === 0) {
+    cont.innerHTML = '<span style="color:#94a3b8;font-family:monospace;font-size:.72rem">Selecciona jugadas para previsualizar</span>';
+    return;
+  }
+  const opts = { routeWeight: wbState.routeWeight, zones: wbState.zones, labelMode: wbState.labelMode };
+  let html = `<div style="display:grid;gap:3px;width:100%;grid-template-columns:repeat(${layout.cols},1fr);grid-template-rows:repeat(${layout.rows},1fr);aspect-ratio:${wbState.width}/${wbState.height};border:1.5px solid #000">`;
+  for (let k = 0; k < perCard; k++) {
+    const pl = plays[k];
+    html += `<div style="border:1px solid #888;overflow:hidden;position:relative;background:#fff">${pl ? wbCellHTML(pl, 900+k, k+1, opts) : ''}</div>`;
+  }
+  html += '</div>';
+  cont.innerHTML = html;
+}
+function wbUpdateSummary() {
+  const plays = dGetSaved().filter(pl => wbState.selected.has(pl.id));
+  const layout = WB_LAYOUTS[wbState.layout];
+  const perCard = layout.cols * layout.rows;
+  const cardsNeeded = Math.max(1, Math.ceil(plays.length / perCard));
+  document.getElementById('wb-count').textContent = `${plays.length} seleccionadas`;
+  document.getElementById('wb-summary').textContent =
+    `${plays.length} jugadas · ${cardsNeeded} tarjeta(s) × ${wbState.copies} copia(s) = ${cardsNeeded * wbState.copies} páginas · ${wbState.width}" × ${wbState.height}"`;
+}
+function wbOpen() {
+  // preselecciona todas las jugadas si no hay nada seleccionado
+  if (wbState.selected.size === 0) {
+    dGetSaved().forEach(pl => wbState.selected.add(pl.id));
+  }
+  wbRenderLayouts();
+  wbRenderPlays();
+  wbRenderOptions();
+  wbRenderPreview();
+  wbUpdateSummary();
+  document.getElementById('wb-overlay').classList.add('open');
+}
+function wbClose() {
+  document.getElementById('wb-overlay').classList.remove('open');
+}
+
+document.getElementById('d-wristband-btn').addEventListener('click', wbOpen);
+document.getElementById('wb-close').addEventListener('click', wbClose);
+document.getElementById('wb-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'wb-overlay') wbClose();
+});
+document.getElementById('wb-select-all').addEventListener('click', () => {
+  dGetSaved().forEach(pl => wbState.selected.add(pl.id));
+  wbRenderPlays(); wbRenderPreview(); wbUpdateSummary();
+});
+document.getElementById('wb-select-none').addEventListener('click', () => {
+  wbState.selected.clear();
+  wbRenderPlays(); wbRenderPreview(); wbUpdateSummary();
+});
+document.getElementById('wb-print').addEventListener('click', () => {
+  if (!wbBuildPrint()) { alert('Selecciona al menos una jugada para imprimir.'); return; }
+  setTimeout(() => { window.print(); }, 60);
+});
+
+// ==================== COMPARAR JUGADAS ====================
+// Evalúa una jugada guardada vs todas las coberturas sin afectar el estado vivo.
+function dEvalPlay(play) {
+  const snap = {
+    routes: dState.routes, motions: dState.motions, formation: dState.formation,
+    mirror: dState.mirror, snapTo: dState.snapTo, doubleQB: dState.doubleQB,
+    secondPasser: dState.secondPasser
+  };
+  dState.routes = play.routes ? JSON.parse(JSON.stringify(play.routes)) : {X:[],H:[],Y:[],C:[],QB:[]};
+  if (!dState.routes.QB) dState.routes.QB = [];
+  dState.motions = play.motions ? JSON.parse(JSON.stringify(play.motions)) : {X:[],H:[],Y:[],C:[],QB:[]};
+  if (!dState.motions.QB) dState.motions.QB = [];
+  dState.formation = play.formation || '2x1';
+  dState.mirror = !!play.mirror;
+  dState.snapTo = play.snapTo || 'QB';
+  dState.doubleQB = !!play.doubleQB;
+  dState.secondPasser = play.secondPasser || 'C';
+  const results = {};
+  let pass = 0;
+  Object.keys(D_COVERAGES).forEach(k => {
+    const sim = simulateCoverage(k);
+    const ok = sim.open.length >= 1;
+    results[k] = { ok, open: sim.open.length };
+    if (ok) pass++;
+  });
+  Object.assign(dState, snap);
+  return { results, pass, total: Object.keys(D_COVERAGES).length };
+}
+function cmpPopulateSelect(selId) {
+  const sel = document.getElementById(selId);
+  sel.innerHTML = '';
+  const saved = dGetSaved();
+  if (saved.length === 0) {
+    const o = document.createElement('option'); o.value=''; o.textContent='— sin jugadas guardadas —';
+    sel.appendChild(o); return;
+  }
+  saved.forEach((pl, i) => {
+    const o = document.createElement('option');
+    o.value = pl.id; o.textContent = pl.name || ('Jugada ' + (i+1));
+    sel.appendChild(o);
+  });
+}
+function cmpRenderSide(selId, diaId, infoId, idx) {
+  const sel = document.getElementById(selId);
+  const dia = document.getElementById(diaId);
+  const info = document.getElementById(infoId);
+  const id = parseInt(sel.value, 10);
+  const play = dGetSaved().find(x => x.id === id);
+  if (!play) { dia.innerHTML = ''; info.innerHTML = '<span style="color:var(--ink-faint)">Selecciona una jugada</span>'; return; }
+  dia.innerHTML = wbPlaySVG(play, 700 + idx, { routeWeight:'medium', zones:true, labelMode:'none' });
+  const ev = dEvalPlay(play);
+  const conceptTxt = play.concepts ? play.concepts.strong + (play.concepts.weak ? ' + ' + String(play.concepts.weak).replace('concept:','') : '') : '—';
+  let covs = '';
+  Object.entries(D_COVERAGES).forEach(([k, c]) => {
+    const r = ev.results[k];
+    covs += `<span class="${r.ok?'ok':'bad'}">${c.name} ${r.ok?'✓':'✕'}</span>`;
+  });
+  info.innerHTML = `
+    <b>${play.name || 'Sin nombre'}</b>
+    Concepto: ${conceptTxt} · Formación: ${(play.formation||'2x1').toUpperCase()}${play.doubleQB?' · DOBLE QB':''}${play.mirror?' · ESPEJO':''}<br>
+    <strong style="color:${ev.pass===ev.total?'var(--accent-5)':'var(--accent-3)'}">Vence ${ev.pass}/${ev.total} coberturas</strong>
+    <div class="cmp-cov">${covs}</div>`;
+}
+function cmpOpen() {
+  cmpPopulateSelect('cmp-sel-a');
+  cmpPopulateSelect('cmp-sel-b');
+  const saved = dGetSaved();
+  if (saved.length >= 2) { document.getElementById('cmp-sel-b').value = saved[1].id; }
+  cmpRenderSide('cmp-sel-a','cmp-dia-a','cmp-info-a',0);
+  cmpRenderSide('cmp-sel-b','cmp-dia-b','cmp-info-b',1);
+  document.getElementById('cmp-overlay').classList.add('open');
+}
+document.getElementById('d-compare-btn').addEventListener('click', cmpOpen);
+document.getElementById('cmp-close').addEventListener('click', () => document.getElementById('cmp-overlay').classList.remove('open'));
+document.getElementById('cmp-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'cmp-overlay') e.currentTarget.classList.remove('open');
+});
+document.getElementById('cmp-sel-a').addEventListener('change', () => cmpRenderSide('cmp-sel-a','cmp-dia-a','cmp-info-a',0));
+document.getElementById('cmp-sel-b').addEventListener('change', () => cmpRenderSide('cmp-sel-b','cmp-dia-b','cmp-info-b',1));
+
 // ==================== BOOT ====================
 dLoadAuto();
-// Garantizar slot QB en routes
+// Garantizar slots QB en routes/motions
 if (!dState.routes.QB) dState.routes.QB = [];
+if (!dState.motions) dState.motions = { X:[], H:[], Y:[], C:[], QB:[] };
+if (!dState.motions.QB) dState.motions.QB = [];
 // Sync UI con estado cargado
 document.querySelectorAll('[data-d-formation]').forEach(b => b.classList.toggle('active', b.dataset.dFormation === dState.formation));
 document.getElementById('d-toggle-zones').classList.toggle('active', dState.showZones);
+document.getElementById('d-toggle-grid').classList.toggle('active', dState.snapGrid);
+document.getElementById('d-toggle-curves').classList.toggle('active', dState.smoothCurves);
+document.getElementById('d-toggle-depths').classList.toggle('active', dState.showDepths);
 document.getElementById('d-toggle-2qb').classList.toggle('active', dState.doubleQB);
 document.getElementById('d-2qb-row').style.display = dState.doubleQB ? 'block' : 'none';
 document.getElementById('d-btn-qb').style.display = dState.doubleQB ? 'flex' : 'none';
@@ -1885,6 +2747,7 @@ document.querySelectorAll('[data-d-snap]').forEach(b => b.classList.toggle('acti
 dRefreshPasserAvailability();
 dPopulateSelects();
 dPopulateCovList();
+dPopulateRouteLib();
 dUpdateConceptInfo();
 dUpdateHint();
 dRenderSavedList();
