@@ -305,6 +305,7 @@
 
   /* ===== CALL SHEET (layout compartido pantalla + impresión) ===== */
   .cs-sheet{margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;color:#000;background:#fff}
+  .cs-sheet + .cs-sheet{margin-top:18px;padding-top:18px;border-top:2px dashed #94a3b8}
   .cs-head{border-bottom:3px solid #000;padding-bottom:6px;margin-bottom:10px}
   .cs-head .cs-t1{font-size:22px;font-weight:900;letter-spacing:-.01em}
   .cs-head .cs-t2{font-size:12px;color:#444;margin-top:2px}
@@ -332,7 +333,9 @@
 
     /* --- CALL SHEET --- */
     body.print-cs #cs-print-area{display:block !important}
-    .cs-sheet{width:7.5in}
+    .cs-sheet{width:7.5in;page-break-after:always}
+    .cs-sheet:last-child{page-break-after:auto}
+    .cs-sheet + .cs-sheet{margin-top:0;padding-top:0;border-top:none}
     .cs-cell{page-break-inside:avoid}
     .cs-cell-h{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 
@@ -615,10 +618,11 @@
           <div class="wb-opt-row"><label>Fecha / nota</label><input type="text" id="cs-date" placeholder="Fecha o situación" class="cs-input"></div>
         </div>
         <div class="wb-section">
-          <h4>02 · JUGADAS (máx. 8)</h4>
+          <h4>02 · JUGADAS · 8 por página, sin límite</h4>
           <div class="wb-toolbar">
+            <button class="wb-mini-btn" id="cs-all">Todas</button>
             <button class="wb-mini-btn" id="cs-none">Limpiar</button>
-            <span class="wb-count" id="cs-count">0 / 8</span>
+            <span class="wb-count" id="cs-count">0 seleccionadas</span>
           </div>
           <div class="wb-plays" id="cs-plays"></div>
         </div>
@@ -2897,25 +2901,41 @@ document.getElementById('cmp-sel-a').addEventListener('change', () => cmpRenderS
 document.getElementById('cmp-sel-b').addEventListener('change', () => cmpRenderSide('cmp-sel-b','cmp-dia-b','cmp-info-b',1));
 
 // ==================== CALL SHEET ====================
-const csState = { selected: [] }; // ids ordenados, máx 8
+const csState = { selected: [] }; // ids ordenados · sin límite (8 por página)
 
-function csSheetHTML() {
-  const plays = csState.selected.map(id => dGetSaved().find(p => p.id === id)).filter(Boolean);
+// HTML de UNA página del call sheet (hasta 8 jugadas)
+function csPageHTML(chunk, startIdx, headSub) {
   const team = (document.getElementById('cs-team').value || '').trim() || 'CALL SHEET';
-  const rival = (document.getElementById('cs-rival').value || '').trim();
-  const date = (document.getElementById('cs-date').value || '').trim();
-  const sub = [rival ? ('vs ' + rival) : '', date].filter(Boolean).join('  ·  ') || 'Hoja de jugadas · 5v5 IFAF';
-  let html = `<div class="cs-sheet"><div class="cs-head"><div class="cs-t1">${team}</div><div class="cs-t2">${sub}</div></div><div class="cs-grid">`;
+  let html = `<div class="cs-sheet"><div class="cs-head"><div class="cs-t1">${team}</div><div class="cs-t2">${headSub}</div></div><div class="cs-grid">`;
   for (let i = 0; i < 8; i++) {
-    const pl = plays[i];
+    const pl = chunk[i];
+    const num = startIdx + i + 1;
     if (pl) {
       const concept = pl.concepts ? (pl.concepts.strong || '').toUpperCase() : '';
-      html += `<div class="cs-cell"><div class="cs-cell-h"><span class="cs-n">${i+1} · ${pl.name || 'Jugada'}</span><span class="cs-c">${concept}</span></div>${wbPlaySVG(pl, 800+i, {routeWeight:'medium', zones:true, labelMode:'none'})}</div>`;
+      html += `<div class="cs-cell"><div class="cs-cell-h"><span class="cs-n">${num} · ${pl.name || 'Jugada'}</span><span class="cs-c">${concept}</span></div>${wbPlaySVG(pl, 800+num, {routeWeight:'medium', zones:true, labelMode:'none'})}</div>`;
     } else {
-      html += `<div class="cs-cell" style="opacity:.25"><div class="cs-cell-h"><span class="cs-n">${i+1}</span><span class="cs-c">—</span></div><div style="aspect-ratio:2/1;background:#f1f5f9"></div></div>`;
+      html += `<div class="cs-cell" style="opacity:.2"><div class="cs-cell-h"><span class="cs-n">${num}</span><span class="cs-c">—</span></div><div style="aspect-ratio:2/1;background:#f1f5f9"></div></div>`;
     }
   }
   html += '</div></div>';
+  return html;
+}
+// Todas las páginas del call sheet (8 jugadas por página)
+function csSheetHTML(fillEmpty) {
+  const plays = csState.selected.map(id => dGetSaved().find(p => p.id === id)).filter(Boolean);
+  const rival = (document.getElementById('cs-rival').value || '').trim();
+  const date = (document.getElementById('cs-date').value || '').trim();
+  const baseSub = [rival ? ('vs ' + rival) : '', date].filter(Boolean).join('  ·  ') || 'Hoja de jugadas · 5v5 IFAF';
+  if (plays.length === 0) return csPageHTML([], 0, baseSub);
+  const pages = Math.ceil(plays.length / 8);
+  let html = '';
+  for (let pg = 0; pg < pages; pg++) {
+    let chunk = plays.slice(pg * 8, pg * 8 + 8);
+    // sólo la última página deja celdas vacías; el preview las muestra
+    if (!fillEmpty && pg === pages - 1) { /* chunk parcial ok */ }
+    const sub = pages > 1 ? `${baseSub}  ·  pág. ${pg+1}/${pages}` : baseSub;
+    html += csPageHTML(chunk, pg * 8, sub);
+  }
   return html;
 }
 function csRenderPlays() {
@@ -2933,7 +2953,7 @@ function csRenderPlays() {
     item.addEventListener('click', () => {
       const idx = csState.selected.indexOf(pl.id);
       if (idx >= 0) csState.selected.splice(idx, 1);
-      else { if (csState.selected.length >= 8) { alert('Máximo 8 jugadas en el call sheet.'); return; } csState.selected.push(pl.id); }
+      else csState.selected.push(pl.id);
       csRenderPlays(); csRenderPreview();
     });
     cont.appendChild(item);
@@ -2941,17 +2961,23 @@ function csRenderPlays() {
 }
 function csRenderPreview() {
   document.getElementById('cs-preview').innerHTML = csSheetHTML();
-  document.getElementById('cs-count').textContent = `${csState.selected.length} / 8`;
-  document.getElementById('cs-summary').textContent = `${csState.selected.length} jugadas · 1 página Carta vertical`;
+  const n = csState.selected.length;
+  const pages = Math.max(1, Math.ceil(n / 8));
+  document.getElementById('cs-count').textContent = `${n} seleccionadas`;
+  document.getElementById('cs-summary').textContent = `${n} jugadas · ${pages} página(s) Carta vertical · 8 por página`;
 }
 function csOpen() {
-  if (csState.selected.length === 0) dGetSaved().slice(0, 8).forEach(p => csState.selected.push(p.id));
+  if (csState.selected.length === 0) dGetSaved().forEach(p => csState.selected.push(p.id));
   csRenderPlays(); csRenderPreview();
   document.getElementById('cs-overlay').classList.add('open');
 }
 document.getElementById('d-callsheet-btn').addEventListener('click', csOpen);
 document.getElementById('cs-close').addEventListener('click', () => document.getElementById('cs-overlay').classList.remove('open'));
 document.getElementById('cs-overlay').addEventListener('click', (e) => { if (e.target.id === 'cs-overlay') e.currentTarget.classList.remove('open'); });
+document.getElementById('cs-all').addEventListener('click', () => {
+  csState.selected = dGetSaved().map(p => p.id);
+  csRenderPlays(); csRenderPreview();
+});
 document.getElementById('cs-none').addEventListener('click', () => { csState.selected = []; csRenderPlays(); csRenderPreview(); });
 ['cs-team','cs-rival','cs-date'].forEach(id => document.getElementById(id).addEventListener('input', csRenderPreview));
 document.getElementById('cs-print').addEventListener('click', () => {
