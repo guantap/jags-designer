@@ -2588,8 +2588,8 @@ function dSavePlay() {
     notes: '',
     ts: new Date().toISOString()
   });
-  // límite 30 jugadas
-  while (arr.length > 30) arr.pop();
+  // límite 100 jugadas
+  while (arr.length > 100) arr.pop();
   dSetSaved(arr);
   nameInput.value = '';
   dRenderSavedList();
@@ -2940,11 +2940,12 @@ document.getElementById('d-import-file').addEventListener('change', (e) => {
         if (data.current.selectedCoverage) dState.selectedCoverage = data.current.selectedCoverage;
       }
       if (Array.isArray(data.saved)) {
-        // merge: añade las jugadas importadas a la librería existente
+        // merge: las jugadas importadas van al INICIO para que no se pierdan
         const existing = dGetSaved();
         const existingIds = new Set(existing.map(x => x.id));
-        const merged = existing.concat(data.saved.filter(x => !existingIds.has(x.id)));
-        dSetSaved(merged.slice(0, 30));
+        const incoming = data.saved.filter(x => !existingIds.has(x.id));
+        const merged = incoming.concat(existing);
+        dSetSaved(merged.slice(0, 100));
       }
       if (data.gameday) {
         gdState.rival = data.gameday.rival || '';
