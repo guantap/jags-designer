@@ -3030,7 +3030,7 @@ function wbPlaySVG(play, idx, opts) {
   let defs = '<defs>';
   ['X','H','Y','C','QB'].forEach(p => {
     const c = (p === 'QB') ? D_QB_COLOR : D_COLORS[p];
-    defs += `<marker id="${uid}-${p}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="${c}"/></marker>`;
+    defs += `<marker id="${uid}-${p}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="14" markerHeight="14" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10 z" fill="${c}"/></marker>`;
   });
   defs += '</defs>';
   let s = `<svg viewBox="0 ${VB_TOP} ${W} ${VB_H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">${defs}`;
