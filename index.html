@@ -3022,8 +3022,17 @@ let wbMarkerSeq = 0;
 // rutas más grandes, menos chrome (sin borde externo ni línea central).
 function wbPlaySVG(play, idx, opts) {
   const W = 600, LOS = 240;
-  // viewBox tight: arriba 25 (~21y), abajo 285 (5y backfield + QB)
-  const VB_TOP = 25, VB_BOT = 285, VB_H = VB_BOT - VB_TOP;
+  // viewBox dinámico: se ajusta al bounding box real de rutas + jugadores
+  const _allY = [LOS, LOS + 58];
+  ['X','H','Y','C','QB'].forEach(_p => {
+    const _pos = wbStart(play, _p);
+    if (_pos) _allY.push(_pos.y);
+    (play.routes  && play.routes[_p]  || []).forEach(pt => _allY.push(pt.y));
+    (play.motions && play.motions[_p] || []).forEach(pt => _allY.push(pt.y));
+  });
+  const VB_TOP = Math.max(0,   Math.min(..._allY) - 40);
+  const VB_BOT = Math.min(360, Math.max(..._allY) + 40);
+  const VB_H   = VB_BOT - VB_TOP;
   // rutas más gruesas — críticas para legibilidad en celdas chicas
   const rw = opts.routeWeight === 'thin' ? 3.5 : opts.routeWeight === 'thick' ? 7.5 : 5.5;
   const uid = 'wba' + (++wbMarkerSeq);
@@ -3358,7 +3367,7 @@ function csPageHTML(chunk, startIdx, headSub) {
     const num = startIdx + i + 1;
     if (pl) {
       const concept = pl.concepts ? (pl.concepts.strong || '').toUpperCase() : '';
-      html += `<div class="cs-cell"><div class="cs-cell-h"><span class="cs-n">${num} · ${pl.name || 'Jugada'}</span><span class="cs-c">${concept}</span></div>${wbPlaySVG(pl, 800+num, {routeWeight:'medium', zones:true, labelMode:'none'})}</div>`;
+      html += `<div class="cs-cell"><div class="cs-cell-h"><span class="cs-n">${num} · ${pl.name || 'Jugada'}</span><span class="cs-c">${concept}</span></div>${wbPlaySVG(pl, 800+num, {routeWeight:'thick', zones:false, labelMode:'none'})}</div>`;
     } else {
       html += `<div class="cs-cell" style="opacity:.2"><div class="cs-cell-h"><span class="cs-n">${num}</span><span class="cs-c">—</span></div><div style="aspect-ratio:2/1;background:#f1f5f9"></div></div>`;
     }
