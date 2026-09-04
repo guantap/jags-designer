@@ -54,6 +54,7 @@ export class Editor {
   }
 
   _snap(pt) {
+    if (!pt) return null;
     return this.snap
       ? { x: Math.round(pt.x / GRID) * GRID, y: Math.round(pt.y / GRID) * GRID }
       : { x: +pt.x.toFixed(1), y: +pt.y.toFixed(1) };
@@ -73,6 +74,7 @@ export class Editor {
     const down = (e) => {
       if (!this.play) return;
       const pt = this._snap(toField(this.svg, e));
+      if (!pt) return;
       const hit = this._hit(pt);
 
       if (hit) {
@@ -97,6 +99,7 @@ export class Editor {
     const move = (e) => {
       if (!this.drag || !this.play) return;
       const pt = this._snap(toField(this.svg, e));
+      if (!pt) return;
       const p = this.play.pieces.find(x => x.id === this.drag.id);
       if (!p) return;
       const dx = pt.x - this.drag.from.x, dy = pt.y - this.drag.from.y;

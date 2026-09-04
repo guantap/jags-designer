@@ -273,10 +273,15 @@ function drawPiece(svg, p, selected, t, sim) {
   svg.appendChild(g);
 }
 
-/* Convierte coordenadas de puntero a coordenadas de cancha. */
+/* Convierte coordenadas de puntero a coordenadas de cancha.
+   Si el SVG esta oculto o aun sin medir, el rect vale cero y la division
+   produce NaN: un punto NaN entra al trazo y corrompe la jugada en
+   silencio. Devuelve null y quien llama descarta el evento. */
 export function toField(svg, evt) {
   const r = svg.getBoundingClientRect();
+  if (!r.width || !r.height) return null;
   const cx = (evt.touches ? evt.touches[0].clientX : evt.clientX) - r.left;
   const cy = (evt.touches ? evt.touches[0].clientY : evt.clientY) - r.top;
-  return { x: (cx / r.width) * FIELD.w, y: (cy / r.height) * FIELD.h };
+  const p = { x: (cx / r.width) * FIELD.w, y: (cy / r.height) * FIELD.h };
+  return (Number.isFinite(p.x) && Number.isFinite(p.y)) ? p : null;
 }
