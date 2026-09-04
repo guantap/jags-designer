@@ -10,6 +10,8 @@ import { render, colorOf } from './field.js';
 import { Editor } from './draw.js';
 import { simulate, matrix, frameAt } from './sim.js';
 import * as store from './store.js';
+import { renderBook } from './ui/book.js';
+import { renderCancha } from './ui/cancha.js';
 
 const $ = (s) => document.querySelector(s);
 const svg = $('#field');
@@ -90,7 +92,6 @@ function renderPieces() {
 function renderSide() {
   const el = $('#side');
   el.innerHTML = '';
-  if (S.tab === 'book') { el.appendChild(blockPlaybook(true)); return; }
   el.appendChild(blockPiece());
   el.appendChild(blockSim());
   el.appendChild(blockMatrix());
@@ -335,22 +336,8 @@ function blockPlaybook(full) {
     editor.setPlay(S.work[S.side]);
     renderPieces(); draw(); renderSide();
   };
-  const ex = h('button', 'btn', 'Exportar');
-  ex.onclick = () => store.exportJSON(S.plays);
-  const im = h('button', 'btn', 'Importar');
-  const file = document.createElement('input');
-  file.type = 'file'; file.accept = 'application/json'; file.style.display = 'none';
-  file.onchange = async () => {
-    if (!file.files[0]) return;
-    try {
-      const incoming = await store.importJSON(file.files[0]);
-      const ids = new Set(S.plays.map(p => p.id));
-      incoming.forEach(p => { if (!ids.has(p.id)) S.plays.push(p); });
-      store.savePlays(S.plays); renderSide();
-    } catch (_) { alert('El archivo no es un playbook válido.'); }
-  };
-  im.onclick = () => file.click();
-  bar.append(nu, ex, im, file);
+  // Imprimir y archivo viven en la superficie Playbook: aquí solo se dibuja.
+  bar.appendChild(nu);
   b.appendChild(bar);
 
   const bk = store.backupInfo();
@@ -436,16 +423,62 @@ $('#b-play').onclick = () => {
   S.anim = requestAnimationFrame(step);
 };
 
-function setTab(tab) {
-  S.tab = tab;
-  $('#tab-design').setAttribute('aria-selected', String(tab === 'design'));
-  $('#tab-book').setAttribute('aria-selected', String(tab === 'book'));
-  $('#stage').style.display = tab === 'design' ? '' : 'none';
-  document.querySelector('.main').style.gridTemplateColumns = tab === 'design' ? '' : '1fr';
-  persistUI(); renderSide();
+function openPlay(p) {
+  if (!p) return;
+  S.side = p.side;
+  S.work[S.side] = clone(p);
+  S.currentId[S.side] = p.id;
+  editor.setPlay(S.work[S.side]);
+  S.t = null;
+  setSide(S.side);
+  setTab('design');
 }
-$('#tab-design').onclick = () => setTab('design');
-$('#tab-book').onclick = () => setTab('book');
+
+function deletePlay(id) {
+  S.plays = S.plays.filter(x => x.id !== id);
+  Object.keys(S.currentId).forEach(k => { if (S.currentId[k] === id) S.currentId[k] = null; });
+  store.savePlays(S.plays);
+}
+
+function importPlays() {
+  const file = document.createElement('input');
+  file.type = 'file'; file.accept = 'application/json';
+  file.onchange = async () => {
+    if (!file.files[0]) return;
+    try {
+      const incoming = await store.importJSON(file.files[0]);
+      const ids = new Set(S.plays.map(p => p.id));
+      incoming.forEach(p => { if (!ids.has(p.id)) S.plays.push(p); });
+      store.savePlays(S.plays);
+      setTab(S.tab);
+    } catch (_) { alert('El archivo no es un playbook válido.'); }
+  };
+  file.click();
+}
+
+const TABS = ['design', 'book', 'cancha'];
+function setTab(tab) {
+  S.tab = TABS.includes(tab) ? tab : 'design';
+  TABS.forEach(t => $(`#tab-${t}`).setAttribute('aria-selected', String(t === S.tab)));
+  $('#stage').hidden = S.tab !== 'design';
+  $('#side').hidden  = S.tab !== 'design';
+  $('#book').hidden  = S.tab !== 'book';
+  $('#cancha').hidden = S.tab !== 'cancha';
+  document.querySelector('.main').dataset.tab = S.tab;
+  // El interruptor de lado pertenece al diseñador: en Playbook y Cancha
+  // cada superficie tiene el suyo.
+  document.querySelector('.topbar .sideswitch').hidden = S.tab !== 'design';
+
+  if (S.tab === 'design') renderSide();
+  if (S.tab === 'book')   renderBook($('#book'), { plays:S.plays, onOpen:openPlay, onDelete:deletePlay, onImport:importPlays });
+  if (S.tab === 'cancha') {
+    document.documentElement.dataset.mode = 'cancha';
+    $('#mode-toggle').textContent = 'Cancha';
+    renderCancha($('#cancha'), { plays:S.plays });
+  }
+  persistUI();
+}
+TABS.forEach(t => { $(`#tab-${t}`).onclick = () => setTab(t); });
 
 $('#mode-toggle').onclick = () => {
   const next = document.documentElement.dataset.mode === 'estudio' ? 'cancha' : 'estudio';

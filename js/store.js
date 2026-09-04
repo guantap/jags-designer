@@ -60,6 +60,13 @@ export function savePlays(plays) { return write(K_PLAYS, { v:2, ts:new Date().to
 export function loadUI()      { return read(K_UI, {}); }
 export function saveUI(patch) { write(K_UI, { ...loadUI(), ...patch }); }
 
+/* ---------------- Game-day ----------------
+   El registro se escribe EN la cancha: vive local y se exporta.
+   No viaja en el playbook. */
+const K_GD = 'jags_gameday_v2';
+export function loadGameday()  { return read(K_GD, { rival:'', date:new Date().toISOString().slice(0,10), log:[], notes:'' }); }
+export function saveGameday(g) { return write(K_GD, g); }
+
 /* ---------------- Sincronía (fase 7) ----------------
    El playbook remoto vive en data/playbook.json dentro del repo.
    Lectura de una vía: el celular consume lo que la Mac publicó. */
