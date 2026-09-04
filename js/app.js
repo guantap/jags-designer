@@ -21,7 +21,7 @@ const S = {
   vs: { off: null, def: null },   // vs.off = id de defensa rival; vs.def = id de jugada ofensiva
   currentId: { off: null, def: null },
   tab: 'design',
-  showZones: true, showGrid: false, showDepths: false, smooth: false,
+  showZones: true, showGrid: false, showDepths: false, smooth: false, showRival: true,
   t: null, anim: null,
   ...store.loadUI(),
 };
@@ -49,8 +49,11 @@ function runSim() {
 /* ---------------- Dibujo ---------------- */
 function draw() {
   const sim = S.t !== null ? runSim() : null;
-  const off = S.side === 'off' ? current() : vsPlay();
-  const def = S.side === 'def' ? current() : vsPlay();
+  // El rival se puede ocultar para dibujar limpio. Ocultarlo NO lo saca de
+  // la simulacion: solo deja de pintarse.
+  const rival = S.showRival ? vsPlay() : null;
+  const off = S.side === 'off' ? current() : rival;
+  const def = S.side === 'def' ? current() : rival;
   render(svg, {
     off, def,
     showZones: S.showZones, showGrid: S.showGrid, showDepths: S.showDepths,
@@ -364,7 +367,7 @@ function blockPlaybook(full) {
 /* ---------------- Controles ---------------- */
 function persistUI() {
   store.saveUI({ side:S.side, showZones:S.showZones, showGrid:S.showGrid,
-    showDepths:S.showDepths, smooth:S.smooth, vs:S.vs, tab:S.tab,
+    showDepths:S.showDepths, smooth:S.smooth, showRival:S.showRival, vs:S.vs, tab:S.tab,
     work:S.work, currentId:S.currentId });
 }
 
@@ -373,6 +376,10 @@ function setSide(side) {
   $('#side-off').setAttribute('aria-pressed', String(side === 'off'));
   $('#side-def').setAttribute('aria-pressed', String(side === 'def'));
   $('#formations').style.display = side === 'off' ? '' : 'none';
+  $('#t-rival').textContent = side === 'def' ? 'Ver ofensiva' : 'Ver defensa';
+  $('#t-rival').title = side === 'def'
+    ? 'Muestra u oculta la jugada ofensiva rival sobre tu defensa'
+    : 'Muestra u oculta la defensa contra la que estas diseñando';
   editor.setPlay(current());
   S.t = null;
   persistUI(); renderPieces(); draw(); renderSide();
@@ -391,6 +398,7 @@ $('#t-route').onclick  = () => { editor.mode = 'route';  $('#t-route').setAttrib
 $('#t-motion').onclick = () => { editor.mode = 'motion'; $('#t-motion').setAttribute('aria-pressed','true'); $('#t-route').setAttribute('aria-pressed','false'); draw(); };
 
 toggle('#t-zones', 'showZones');
+toggle('#t-rival', 'showRival');
 toggle('#t-grid', 'showGrid');
 toggle('#t-depths', 'showDepths');
 toggle('#t-smooth', 'smooth');

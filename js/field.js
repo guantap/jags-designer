@@ -74,12 +74,28 @@ export function render(svg, opts) {
 
   svg.appendChild(el('rect', { x:0, y:0, width:FIELD.w, height:FIELD.h, fill:'var(--field-bg)' }));
 
-  // Marcas de yarda cada 5y
+  // ZONAS COMO AREAS. Una zona es una region, no una caja: se lee por
+  // relleno. Asi el corte corto/profundo salta a la vista sin agregar
+  // una cuarta linea punteada gris que compita con las rutas.
+  if (showZones) {
+    // Los rellenos sangran hasta el borde del campo: si dejan margen,
+    // la zona vuelve a leerse como una caja y eso es justo lo que se evita.
+    ZONES.forEach(z => {
+      const deep = z.y + z.h <= FIELD.losY - 95;
+      const x = z.x <= 22 ? 0 : z.x;
+      const w = (z.x + z.w >= FIELD.w - 22 ? FIELD.w : z.x + z.w) - x;
+      svg.appendChild(el('rect', { x, y:z.y, width:w, height:z.h,
+        fill: deep ? 'var(--field-zone-deep)' : 'var(--field-zone-short)' }));
+    });
+  }
+
+  // Marcas de yarda: la capa mas callada de todas.
   for (let d = 5; d <= 20; d += 5) {
     const y = FIELD.losY - d * FIELD.pxPerYard;
-    svg.appendChild(el('line', { x1:14, y1:y, x2:FIELD.w - 14, y2:y,
-      stroke:'var(--field-line)', 'stroke-width':1, 'stroke-dasharray':'2 7' }));
-    const lab = el('text', { x:6, y:y + 3, fill:'var(--field-label)', 'font-size':9, 'font-family':'var(--mono)' });
+    svg.appendChild(el('line', { x1:26, y1:y, x2:FIELD.w - 26, y2:y,
+      stroke:'var(--field-yard)', 'stroke-width':0.75, 'stroke-dasharray':'1.5 8' }));
+    const lab = el('text', { x:8, y:y + 3, fill:'var(--field-label)', 'font-size':8.5,
+      'font-family':'var(--mono)', opacity:0.75 });
     lab.textContent = `${d}y`;
     svg.appendChild(lab);
   }
@@ -90,11 +106,22 @@ export function render(svg, opts) {
   }
 
   if (showZones) {
+    // Solo las divisiones INTERNAS entre zonas, no el marco de cada caja.
+    const seen = new Set();
     ZONES.forEach(z => {
-      svg.appendChild(el('rect', { x:z.x, y:z.y, width:z.w, height:z.h, fill:'none',
-        stroke:'var(--field-line)', 'stroke-width':1, 'stroke-dasharray':'5 5', rx:3, opacity:0.8 }));
-      const lab = el('text', { x:z.x + z.w / 2, y:z.y + z.h / 2 + 4, 'text-anchor':'middle',
-        fill:'var(--field-label)', 'font-size':10, 'font-family':'var(--mono)', 'letter-spacing':'0.12em' });
+      [[z.x, z.y, z.x, z.y + z.h], [z.x + z.w, z.y, z.x + z.w, z.y + z.h]].forEach(([x1, y1, x2, y2]) => {
+        if (x1 <= 22 || x1 >= FIELD.w - 22) return;   // los bordes de cancha no se dibujan
+        const k = `${x1}:${y1}`;
+        if (seen.has(k)) return;
+        seen.add(k);
+        svg.appendChild(el('line', { x1, y1, x2, y2, stroke:'var(--field-zone-edge)',
+          'stroke-width':1.2, 'stroke-dasharray':'4 5' }));
+      });
+      // La columna izquierda (26px) es de las marcas de yarda: las etiquetas
+      // de zona no se meten ahi.
+      const lx = Math.max(z.x + 10, 32);
+      const lab = el('text', { x:lx, y:z.y + 16, fill:'var(--field-label)', 'font-size':8.5,
+        'font-family':'var(--mono)', 'font-weight':'600', 'letter-spacing':'0.14em' });
       lab.textContent = z.name;
       svg.appendChild(lab);
     });
@@ -107,7 +134,8 @@ export function render(svg, opts) {
   svg.appendChild(el('line', { x1:0, y1:FIELD.losY - 70, x2:FIELD.w, y2:FIELD.losY - 70,
     stroke:'var(--field-los)', 'stroke-width':1, 'stroke-dasharray':'3 6', opacity:0.55 }));
   const rl = el('text', { x:FIELD.w - 8, y:FIELD.losY - 74, 'text-anchor':'end',
-    fill:'var(--field-label)', 'font-size':8, 'font-family':'var(--mono)' });
+    fill:'var(--field-los)', 'font-size':8, 'font-family':'var(--mono)',
+    'font-weight':'600', 'letter-spacing':'0.1em', opacity:0.8 });
   rl.textContent = 'RUSH 7y';
   svg.appendChild(rl);
 

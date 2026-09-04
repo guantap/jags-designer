@@ -85,10 +85,17 @@
   --ink-dim:   var(--n-6);
   --ink-faint: var(--n-4);
 
-  --field-bg:    oklch(0.22 0.008 70);
-  --field-line:  oklch(0.38 0.010 70);
-  --field-los:   oklch(0.72 0.09 200);
-  --field-label: oklch(0.50 0.008 70);
+  /* Cuatro capas separadas para que cada una se pueda calibrar sola.
+     Las zonas son AREAS (relleno), no cajas: por eso se distinguen por
+     luminancia y no por otra linea punteada gris mas. */
+  --field-bg:         oklch(0.22 0.008 70);
+  --field-zone-short: oklch(0.252 0.009 70);
+  --field-zone-deep:  oklch(0.207 0.008 70);
+  --field-zone-edge:  oklch(0.34 0.010 70);
+  --field-yard:       oklch(0.31 0.008 70);
+  --field-los:        oklch(0.74 0.10 200);
+  --field-label:      oklch(0.62 0.010 70);
+  --field-line:       oklch(0.38 0.010 70);
 }
 
 /* ============ MODO CANCHA · claro, casi papel, contraste máximo ============
@@ -108,10 +115,14 @@
   --accent:      oklch(0.52 0.20 33);
   --accent-soft: oklch(0.52 0.20 33 / 0.12);
 
-  --field-bg:    oklch(0.995 0.002 70);
-  --field-line:  oklch(0.80 0.007 70);
-  --field-los:   oklch(0.45 0.14 235);
-  --field-label: oklch(0.62 0.008 70);
+  --field-bg:         oklch(0.995 0.002 70);
+  --field-zone-short: oklch(0.962 0.004 70);
+  --field-zone-deep:  oklch(0.995 0.002 70);
+  --field-zone-edge:  oklch(0.84 0.006 70);
+  --field-yard:       oklch(0.88 0.005 70);
+  --field-los:        oklch(0.42 0.15 235);
+  --field-label:      oklch(0.44 0.010 70);
+  --field-line:       oklch(0.80 0.007 70);
 
   /* Piezas oscurecidas: sobre papel al sol, la claridad se pierde */
   --off-X:  oklch(0.50 0.17 240);
