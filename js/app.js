@@ -312,9 +312,8 @@ function blockPlaybook(full) {
     del.onclick = (e) => {
       e.stopPropagation();
       if (p.builtin) return;
-      S.plays = S.plays.filter(x => x.id !== p.id);
-      if (S.currentId[S.side] === p.id) S.currentId[S.side] = null;
-      store.savePlays(S.plays); renderSide();
+      deletePlay(p.id);
+      renderSide();
     };
     r.appendChild(del);
     r.onclick = () => {
@@ -435,7 +434,10 @@ function openPlay(p) {
 }
 
 function deletePlay(id) {
-  S.plays = S.plays.filter(x => x.id !== id);
+  // En sitio: las superficies guardan una referencia al arreglo. Reemplazarlo
+  // las deja mirando una copia vieja.
+  const i = S.plays.findIndex(x => x.id === id);
+  if (i >= 0) S.plays.splice(i, 1);
   Object.keys(S.currentId).forEach(k => { if (S.currentId[k] === id) S.currentId[k] = null; });
   store.savePlays(S.plays);
 }
@@ -456,6 +458,13 @@ function importPlays() {
   file.click();
 }
 
+function pullRemote(remotePlays) {
+  const r = store.mergeRemote(S.plays, remotePlays);
+  S.plays.splice(0, S.plays.length, ...r.plays);
+  store.savePlays(S.plays);
+  return r;
+}
+
 const TABS = ['design', 'book', 'cancha'];
 function setTab(tab) {
   S.tab = TABS.includes(tab) ? tab : 'design';
@@ -470,7 +479,8 @@ function setTab(tab) {
   document.querySelector('.topbar .sideswitch').hidden = S.tab !== 'design';
 
   if (S.tab === 'design') renderSide();
-  if (S.tab === 'book')   renderBook($('#book'), { plays:S.plays, onOpen:openPlay, onDelete:deletePlay, onImport:importPlays });
+  if (S.tab === 'book')   renderBook($('#book'), {
+    plays:S.plays, onOpen:openPlay, onDelete:deletePlay, onImport:importPlays, onPull:pullRemote });
   if (S.tab === 'cancha') {
     document.documentElement.dataset.mode = 'cancha';
     $('#mode-toggle').textContent = 'Cancha';

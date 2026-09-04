@@ -79,6 +79,20 @@ export async function fetchRemote() {
   } catch (_) { return null; }
 }
 
+/* Une el playbook remoto con el local SIN pisar trabajo:
+   lo que no existe se agrega; lo que existe se actualiza solo si el
+   remoto es mas nuevo (por ts). Nada se borra jamas. */
+export function mergeRemote(local, remote) {
+  const byId = new Map(local.map(p => [p.id, p]));
+  let added = 0, updated = 0;
+  remote.forEach(r => {
+    const cur = byId.get(r.id);
+    if (!cur) { byId.set(r.id, r); added++; return; }
+    if (r.ts && cur.ts && new Date(r.ts) > new Date(cur.ts)) { byId.set(r.id, r); updated++; }
+  });
+  return { plays: [...byId.values()], added, updated };
+}
+
 export function exportJSON(plays, name = 'jags-playbook.json') {
   const blob = new Blob([JSON.stringify({ v:2, ts:new Date().toISOString(), plays }, null, 2)], { type:'application/json' });
   const a = document.createElement('a');

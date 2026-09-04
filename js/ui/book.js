@@ -18,6 +18,7 @@ export function renderBook(root, ctx) {
     cat: '',
     team: ui.team || 'JAGS',
     rival: ui.rival || '',
+    sync: '',
   };
 
   const save = () => store.saveUI({ bookSide:state.side, bookFormat:state.format,
@@ -83,6 +84,16 @@ export function renderBook(root, ctx) {
           </section>
 
           <section class="block">
+            <h2>Sincronizar</h2>
+            <p class="notice">La Mac publica, el teléfono lee. Una vía, sin backend.</p>
+            <div class="toolbar">
+              <button class="btn sm" id="bk-pull">Traer del repo</button>
+              <button class="btn sm" id="bk-publish">Publicar</button>
+            </div>
+            ${state.sync ? `<p class="notice" id="bk-sync">${state.sync}</p>` : ''}
+          </section>
+
+          <section class="block">
             <h2>Archivo</h2>
             <div class="toolbar">
               <button class="btn sm" id="bk-export">Exportar JSON</button>
@@ -129,6 +140,22 @@ export function renderBook(root, ctx) {
     wrap.querySelector('#bk-import').onclick = () => ctx.onImport();
     const bkb = wrap.querySelector('#bk-backup');
     if (bkb) bkb.onclick = () => store.downloadBackup();
+
+    wrap.querySelector('#bk-pull').onclick = async () => {
+      state.sync = 'Buscando…'; paint();
+      const remote = await store.fetchRemote();
+      if (!remote) { state.sync = 'No hay playbook publicado en este servidor todavía.'; paint(); return; }
+      const r = ctx.onPull(remote.plays);
+      state.sync = r.added || r.updated
+        ? `Listo: ${r.added} nueva${r.added === 1 ? '' : 's'}, ${r.updated} actualizada${r.updated === 1 ? '' : 's'}.`
+        : `Ya estabas al día · ${remote.plays.length} jugadas publicadas.`;
+      paint();
+    };
+    wrap.querySelector('#bk-publish').onclick = () => {
+      store.exportJSON(plays, 'playbook.json');
+      state.sync = 'Bajó <b>playbook.json</b>. Ponelo en <code>data/</code> del repo y hacé push: el teléfono lo ve al tocar “Traer del repo”.';
+      paint();
+    };
   };
 
   paint();

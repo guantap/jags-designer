@@ -1,0 +1,792 @@
+{
+  "v": 2,
+  "ts": "2026-09-04T16:40:14.595Z",
+  "note": "Playbook publicado. La Mac lo escribe, el telefono lo lee.",
+  "plays": [
+    {
+      "id": "cov-cover0",
+      "side": "def",
+      "name": "Cobertura 0",
+      "formation": "libre",
+      "pieces": [
+        {
+          "id": "def-D1",
+          "side": "def",
+          "label": "D1",
+          "x": 90,
+          "y": 185,
+          "route": [],
+          "motion": [],
+          "style": "solid",
+          "cap": "arrow",
+          "duty": {
+            "type": "man",
+            "target": "X",
+            "radius": 40
+          }
+        },
+        {
+          "id": "def-D2",
+          "side": "def",
+          "label": "D2",
+          "x": 200,
+          "y": 185,
+          "route": [],
+          "motion": [],
+          "style": "solid",
+          "cap": "arrow",
+          "duty": {
+            "type": "man",
+            "target": "H",
+            "radius": 40
+          }
+        },
+        {
+          "id": "def-D3",
+          "side": "def",
+          "label": "D3",
+          "x": 310,
+          "y": 185,
+          "route": [],
+          "motion": [],
+          "style": "solid",
+          "cap": "arrow",
+          "duty": {
+            "type": "man",
+            "target": "Y",
+            "radius": 40
+          }
+        },
+        {
+          "id": "def-D4",
+          "side": "def",
+          "label": "D4",
+          "x": 420,
+          "y": 185,
+          "route": [],
+          "motion": [],
+          "style": "solid",
+          "cap": "arrow",
+          "duty": {
+            "type": "man",
+            "target": "C",
+            "radius": 40
+          }
+        },
+        {
+          "id": "def-D5",
+          "side": "def",
+          "label": "D5",
+          "x": 300,
+          "y": 170,
+          "route": [
+            {
+              "x": 300,
+              "y": 285
+            }
+          ],
+          "motion": [],
+          "style": "solid",
+          "cap": "arrow",
+          "duty": {
+            "type": "blitz"
+          }
+        }
+      ],
+      "snapTo": "QB",
+      "doubleQB": false,
+      "secondPasser": "C",
+      "mirror": false,
+      "category": "presion",
+      "situation": "",
+      "notes": "Blitz total · Marcaje personal · Sin ayuda profunda",
+      "ts": "2026-09-04T16:40:14.594Z",
+      "builtin": true
+    },
+    {
+      "id": "cov-cover1",
+      "side": "def",
+      "name": "Cobertura 1",
+      "formation": "libre",
+      "pieces": [
+        {
+          "id": "def-D1",
+          "side": "def",
+          "label": "D1",
+          "x": 300,
+          "y": 187.5,
+          "route": [
+            {
+              "x": 300,
+              "y": 90
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 95
+          }
+        },
+        {
+          "id": "def-D2",
+          "side": "def",
+          "label": "D2",
+          "x": 200,
+          "y": 185,
+          "route": [],
+          "motion": [],
+          "style": "solid",
+          "cap": "arrow",
+          "duty": {
+            "type": "man",
+            "target": "H",
+            "radius": 40
+          }
+        },
+        {
+          "id": "def-D3",
+          "side": "def",
+          "label": "D3",
+          "x": 310,
+          "y": 185,
+          "route": [],
+          "motion": [],
+          "style": "solid",
+          "cap": "arrow",
+          "duty": {
+            "type": "man",
+            "target": "Y",
+            "radius": 40
+          }
+        },
+        {
+          "id": "def-D4",
+          "side": "def",
+          "label": "D4",
+          "x": 420,
+          "y": 185,
+          "route": [],
+          "motion": [],
+          "style": "solid",
+          "cap": "arrow",
+          "duty": {
+            "type": "man",
+            "target": "C",
+            "radius": 40
+          }
+        },
+        {
+          "id": "def-D5",
+          "side": "def",
+          "label": "D5",
+          "x": 530,
+          "y": 185,
+          "route": [],
+          "motion": [],
+          "style": "solid",
+          "cap": "arrow",
+          "duty": {
+            "type": "man",
+            "target": "QB",
+            "radius": 40
+          }
+        }
+      ],
+      "snapTo": "QB",
+      "doubleQB": false,
+      "secondPasser": "C",
+      "mirror": false,
+      "category": "cobertura",
+      "situation": "",
+      "notes": "1 profundo + marcaje personal",
+      "ts": "2026-09-04T16:40:14.595Z",
+      "builtin": true
+    },
+    {
+      "id": "cov-cover2",
+      "side": "def",
+      "name": "Cobertura 2",
+      "formation": "libre",
+      "pieces": [
+        {
+          "id": "def-D1",
+          "side": "def",
+          "label": "D1",
+          "x": 150,
+          "y": 191,
+          "route": [
+            {
+              "x": 150,
+              "y": 100
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 115
+          }
+        },
+        {
+          "id": "def-D2",
+          "side": "def",
+          "label": "D2",
+          "x": 450,
+          "y": 191,
+          "route": [
+            {
+              "x": 450,
+              "y": 100
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 115
+          }
+        },
+        {
+          "id": "def-D3",
+          "side": "def",
+          "label": "D3",
+          "x": 80,
+          "y": 220.75,
+          "route": [
+            {
+              "x": 80,
+              "y": 185
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 70
+          }
+        },
+        {
+          "id": "def-D4",
+          "side": "def",
+          "label": "D4",
+          "x": 520,
+          "y": 220.75,
+          "route": [
+            {
+              "x": 520,
+              "y": 185
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 70
+          }
+        },
+        {
+          "id": "def-D5",
+          "side": "def",
+          "label": "D5",
+          "x": 300,
+          "y": 217.25,
+          "route": [
+            {
+              "x": 300,
+              "y": 175
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 80
+          }
+        }
+      ],
+      "snapTo": "QB",
+      "doubleQB": false,
+      "secondPasser": "C",
+      "mirror": false,
+      "category": "cobertura",
+      "situation": "",
+      "notes": "2 profundos · Esquinas cortas",
+      "ts": "2026-09-04T16:40:14.595Z",
+      "builtin": true
+    },
+    {
+      "id": "cov-cover3",
+      "side": "def",
+      "name": "Cobertura 3",
+      "formation": "libre",
+      "pieces": [
+        {
+          "id": "def-D1",
+          "side": "def",
+          "label": "D1",
+          "x": 120,
+          "y": 185.75,
+          "route": [
+            {
+              "x": 120,
+              "y": 85
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 105
+          }
+        },
+        {
+          "id": "def-D2",
+          "side": "def",
+          "label": "D2",
+          "x": 300,
+          "y": 180.5,
+          "route": [
+            {
+              "x": 300,
+              "y": 70
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 105
+          }
+        },
+        {
+          "id": "def-D3",
+          "side": "def",
+          "label": "D3",
+          "x": 480,
+          "y": 185.75,
+          "route": [
+            {
+              "x": 480,
+              "y": 85
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 105
+          }
+        },
+        {
+          "id": "def-D4",
+          "side": "def",
+          "label": "D4",
+          "x": 200,
+          "y": 219,
+          "route": [
+            {
+              "x": 200,
+              "y": 180
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 80
+          }
+        },
+        {
+          "id": "def-D5",
+          "side": "def",
+          "label": "D5",
+          "x": 400,
+          "y": 219,
+          "route": [
+            {
+              "x": 400,
+              "y": 180
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 80
+          }
+        }
+      ],
+      "snapTo": "QB",
+      "doubleQB": false,
+      "secondPasser": "C",
+      "mirror": false,
+      "category": "cobertura",
+      "situation": "",
+      "notes": "3 tercios profundos · 2 cortos",
+      "ts": "2026-09-04T16:40:14.595Z",
+      "builtin": true
+    },
+    {
+      "id": "cov-cover4",
+      "side": "def",
+      "name": "Cobertura 4",
+      "formation": "libre",
+      "pieces": [
+        {
+          "id": "def-D1",
+          "side": "def",
+          "label": "D1",
+          "x": 120,
+          "y": 182.25,
+          "route": [
+            {
+              "x": 120,
+              "y": 75
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 90
+          }
+        },
+        {
+          "id": "def-D2",
+          "side": "def",
+          "label": "D2",
+          "x": 260,
+          "y": 182.25,
+          "route": [
+            {
+              "x": 260,
+              "y": 75
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 90
+          }
+        },
+        {
+          "id": "def-D3",
+          "side": "def",
+          "label": "D3",
+          "x": 340,
+          "y": 182.25,
+          "route": [
+            {
+              "x": 340,
+              "y": 75
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 90
+          }
+        },
+        {
+          "id": "def-D4",
+          "side": "def",
+          "label": "D4",
+          "x": 480,
+          "y": 182.25,
+          "route": [
+            {
+              "x": 480,
+              "y": 75
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 90
+          }
+        },
+        {
+          "id": "def-D5",
+          "side": "def",
+          "label": "D5",
+          "x": 300,
+          "y": 222.5,
+          "route": [
+            {
+              "x": 300,
+              "y": 190
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 75
+          }
+        }
+      ],
+      "snapTo": "QB",
+      "doubleQB": false,
+      "secondPasser": "C",
+      "mirror": false,
+      "category": "cobertura",
+      "situation": "",
+      "notes": "Cuartos · 1 corto",
+      "ts": "2026-09-04T16:40:14.595Z",
+      "builtin": true
+    },
+    {
+      "id": "cov-cover2_invert",
+      "side": "def",
+      "name": "C2 Invertida",
+      "formation": "libre",
+      "pieces": [
+        {
+          "id": "def-D1",
+          "side": "def",
+          "label": "D1",
+          "x": 480,
+          "y": 187.5,
+          "route": [
+            {
+              "x": 480,
+              "y": 90
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 115
+          }
+        },
+        {
+          "id": "def-D2",
+          "side": "def",
+          "label": "D2",
+          "x": 150,
+          "y": 189.25,
+          "route": [
+            {
+              "x": 150,
+              "y": 95
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 115
+          }
+        },
+        {
+          "id": "def-D3",
+          "side": "def",
+          "label": "D3",
+          "x": 400,
+          "y": 217.25,
+          "route": [
+            {
+              "x": 400,
+              "y": 175
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 110
+          }
+        },
+        {
+          "id": "def-D4",
+          "side": "def",
+          "label": "D4",
+          "x": 180,
+          "y": 220.75,
+          "route": [
+            {
+              "x": 180,
+              "y": 185
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 80
+          }
+        },
+        {
+          "id": "def-D5",
+          "side": "def",
+          "label": "D5",
+          "x": 300,
+          "y": 170,
+          "route": [
+            {
+              "x": 300,
+              "y": 285
+            }
+          ],
+          "motion": [],
+          "style": "solid",
+          "cap": "arrow",
+          "duty": {
+            "type": "blitz"
+          }
+        }
+      ],
+      "snapTo": "QB",
+      "doubleQB": false,
+      "secondPasser": "C",
+      "mirror": false,
+      "category": "presion",
+      "situation": "",
+      "notes": "Rotación al fuerte · 2 profundos · 2 cortos · 1 blitz",
+      "ts": "2026-09-04T16:40:14.595Z",
+      "builtin": true
+    },
+    {
+      "id": "cov-box",
+      "side": "def",
+      "name": "Caja",
+      "formation": "libre",
+      "pieces": [
+        {
+          "id": "def-D1",
+          "side": "def",
+          "label": "D1",
+          "x": 90,
+          "y": 226,
+          "route": [
+            {
+              "x": 90,
+              "y": 200
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 65
+          }
+        },
+        {
+          "id": "def-D2",
+          "side": "def",
+          "label": "D2",
+          "x": 210,
+          "y": 222.5,
+          "route": [
+            {
+              "x": 210,
+              "y": 190
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 60
+          }
+        },
+        {
+          "id": "def-D3",
+          "side": "def",
+          "label": "D3",
+          "x": 300,
+          "y": 219,
+          "route": [
+            {
+              "x": 300,
+              "y": 180
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 65
+          }
+        },
+        {
+          "id": "def-D4",
+          "side": "def",
+          "label": "D4",
+          "x": 390,
+          "y": 222.5,
+          "route": [
+            {
+              "x": 390,
+              "y": 190
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 60
+          }
+        },
+        {
+          "id": "def-D5",
+          "side": "def",
+          "label": "D5",
+          "x": 510,
+          "y": 226,
+          "route": [
+            {
+              "x": 510,
+              "y": 200
+            }
+          ],
+          "motion": [],
+          "style": "dashed",
+          "cap": "dot",
+          "duty": {
+            "type": "zone",
+            "radius": 65
+          }
+        }
+      ],
+      "snapTo": "QB",
+      "doubleQB": false,
+      "secondPasser": "C",
+      "mirror": false,
+      "category": "cobertura",
+      "situation": "",
+      "notes": "5 en la caja · sin profundidad · vulnerable a verticales",
+      "ts": "2026-09-04T16:40:14.595Z",
+      "builtin": true
+    }
+  ]
+}
