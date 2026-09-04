@@ -104,7 +104,7 @@
 :root[data-mode="cancha"] {
   --bg:        oklch(0.97 0.004 70);
   --bg-panel:  oklch(0.99 0.003 70);
-  --bg-raised: oklch(1 0 0 / 0);
+  --bg-raised: oklch(1 0.001 70);
   --bg-input:  oklch(1 0.002 70);
   --line:      oklch(0.72 0.008 70);
   --line-soft: oklch(0.87 0.006 70);
