@@ -5,7 +5,7 @@
    con sello de tiempo que esta app jamás sobreescribe.
    ============================================================ */
 
-import { migrateV1, coveragePlays } from './model.js';
+import { migrateV1, coveragePlays, sanitizeAll, sanitizePlay } from './model.js';
 
 const K_V1_SAVED = 'jags_designer_saved_v1';
 const K_V1_STATE = 'jags_designer_state_v1';
@@ -45,7 +45,7 @@ export function downloadBackup() {
 
 export function loadPlays() {
   const store = read(K_PLAYS, null);
-  if (store && Array.isArray(store.plays)) return store.plays;
+  if (store && Array.isArray(store.plays)) return sanitizeAll(store.plays);
 
   // Primer arranque de v2: respaldar, migrar lo ofensivo, sembrar lo defensivo.
   backupV1();
@@ -57,7 +57,11 @@ export function loadPlays() {
 
 export function savePlays(plays) { return write(K_PLAYS, { v:2, ts:new Date().toISOString(), plays }); }
 
-export function loadUI()      { return read(K_UI, {}); }
+export function loadUI() {
+  const ui = read(K_UI, {});
+  if (ui.work) Object.values(ui.work).forEach(sanitizePlay);
+  return ui;
+}
 export function saveUI(patch) { write(K_UI, { ...loadUI(), ...patch }); }
 
 /* ---------------- Game-day ----------------

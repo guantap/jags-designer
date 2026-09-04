@@ -150,6 +150,22 @@ export function mirrorPlay(pl) {
 
 export const clone = (o) => JSON.parse(JSON.stringify(o));
 
+/* Saneamiento al cargar: una version anterior podia meter puntos no
+   finitos en un trazo (campo sin medir → division entre cero). La guarda
+   impide crearlos, esto limpia los que ya quedaron guardados. */
+const okPt = (q) => q && Number.isFinite(q.x) && Number.isFinite(q.y);
+export function sanitizePlay(pl) {
+  if (!pl || !Array.isArray(pl.pieces)) return pl;
+  pl.pieces.forEach(p => {
+    p.route  = (p.route  || []).filter(okPt);
+    p.motion = (p.motion || []).filter(okPt);
+    if (!Number.isFinite(p.x)) p.x = 300;
+    if (!Number.isFinite(p.y)) p.y = FIELD.losY;
+  });
+  return pl;
+}
+export const sanitizeAll = (arr) => (Array.isArray(arr) ? arr.map(sanitizePlay) : []);
+
 /* ============================================================
    MIGRACIÓN v1 → v2
    Las 7 coberturas hardcodeadas dejan de ser presets muertos:
