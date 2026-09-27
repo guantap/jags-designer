@@ -23,7 +23,7 @@ const S = {
   vs: { off: null, def: null },   // vs.off = id de defensa rival; vs.def = id de jugada ofensiva
   currentId: { off: null, def: null },
   tab: 'design',
-  showZones: true, showGrid: false, showDepths: false, smooth: false, showRival: true,
+  showZones: true, showGrid: false, showDepths: false, showYards: false, smooth: false, showRival: true,
   t: null, anim: null,
   ...store.loadUI(),
 };
@@ -58,7 +58,7 @@ function draw() {
   const def = S.side === 'def' ? current() : rival;
   render(svg, {
     off, def,
-    showZones: S.showZones, showGrid: S.showGrid, showDepths: S.showDepths,
+    showZones: S.showZones, showGrid: S.showGrid, showDepths: S.showDepths, showYards: S.showYards,
     smooth: S.smooth, selected: editor.selected, t: S.t,
     sim: sim ? frameAt(sim, S.t) : null,
   });
@@ -353,7 +353,7 @@ function blockPlaybook(full) {
 /* ---------------- Controles ---------------- */
 function persistUI() {
   store.saveUI({ side:S.side, showZones:S.showZones, showGrid:S.showGrid,
-    showDepths:S.showDepths, smooth:S.smooth, showRival:S.showRival, vs:S.vs, tab:S.tab,
+    showDepths:S.showDepths, showYards:S.showYards, smooth:S.smooth, showRival:S.showRival, vs:S.vs, tab:S.tab,
     work:S.work, currentId:S.currentId });
 }
 
@@ -387,6 +387,7 @@ toggle('#t-zones', 'showZones');
 toggle('#t-rival', 'showRival');
 toggle('#t-grid', 'showGrid');
 toggle('#t-depths', 'showDepths');
+toggle('#t-yards', 'showYards');
 toggle('#t-smooth', 'smooth');
 
 $('#formations').querySelectorAll('[data-form]').forEach(b => {

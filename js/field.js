@@ -66,7 +66,7 @@ function defs(svg) {
    ============================================================ */
 export function render(svg, opts) {
   const { off, def, showZones = true, showDepths = false, smooth = false,
-          selected = null, t = null, sim = null, showGrid = false } = opts;
+          selected = null, t = null, sim = null, showGrid = false, showYards = false } = opts;
 
   svg.innerHTML = '';
   svg.setAttribute('viewBox', `0 0 ${FIELD.w} ${FIELD.h}`);
@@ -89,15 +89,18 @@ export function render(svg, opts) {
     });
   }
 
-  // Marcas de yarda: la capa mas callada de todas.
-  for (let d = 5; d <= 20; d += 5) {
-    const y = FIELD.losY - d * FIELD.pxPerYard;
-    svg.appendChild(el('line', { x1:26, y1:y, x2:FIELD.w - 26, y2:y,
-      stroke:'var(--field-yard)', 'stroke-width':0.75, 'stroke-dasharray':'1.5 8' }));
-    const lab = el('text', { x:8, y:y + 3, fill:'var(--field-label)', 'font-size':8.5,
-      'font-family':'var(--mono)', opacity:0.75 });
-    lab.textContent = `${d}y`;
-    svg.appendChild(lab);
+  // Marcas de yarda: apagadas por default. En cancha lo que se lee es la
+  // jugada; la regla de medir es una ayuda de estudio, no parte del dibujo.
+  if (showYards) {
+    for (let d = 5; d <= 20; d += 5) {
+      const y = FIELD.losY - d * FIELD.pxPerYard;
+      svg.appendChild(el('line', { x1:26, y1:y, x2:FIELD.w - 26, y2:y,
+        stroke:'var(--field-yard)', 'stroke-width':0.75, 'stroke-dasharray':'1.5 8' }));
+      const lab = el('text', { x:8, y:y + 3, fill:'var(--field-label)', 'font-size':8.5,
+        'font-family':'var(--mono)', opacity:0.75 });
+      lab.textContent = `${d}y`;
+      svg.appendChild(lab);
+    }
   }
 
   if (showGrid) {

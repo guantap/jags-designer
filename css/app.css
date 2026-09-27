@@ -288,6 +288,35 @@ button.read:focus-visible { outline: 2px solid var(--accent); outline-offset: 2p
 .cn-res .btn[data-tone="bad"]  { border-color: var(--bad); }
 
 /* ============================================================
+   Panel de opciones de impresión (vuelve del v1)
+   Filas etiqueta + chips, y una vista previa de la tarjeta real
+   con su proporción exacta en pulgadas.
+   ============================================================ */
+.opts { display: flex; flex-direction: column; gap: var(--s-2); }
+.opt-row { display: grid; grid-template-columns: 5.4rem 1fr; align-items: center; gap: var(--s-2); }
+.opt-row > label { font-family: var(--mono); font-size: var(--t-xs); color: var(--ink-faint);
+  letter-spacing: .06em; text-transform: uppercase; }
+.opt-row .chips { display: flex; flex-wrap: wrap; gap: var(--s-1); }
+.opt-row .chip { padding: 2px var(--s-2); font-size: var(--t-xs); }
+
+.opt-prev { display: flex; flex-direction: column; gap: var(--s-2);
+  border: 1px solid var(--line-soft); border-radius: var(--r-md); padding: var(--s-2); background: var(--bg); }
+.opt-prev-h { font-family: var(--mono); font-size: var(--t-xs); color: var(--ink-faint); letter-spacing: .08em; }
+
+/* La previa imita el papel: fondo blanco siempre, en los dos modos. */
+.wbprev { width: 100%; background: #fff; border: 1px solid #0f172a; border-radius: 3px; padding: 4px; }
+.wbprev-grid { display: grid; width: 100%; height: 100%; gap: 3px; }
+.wbprev .w-cell { border: 1px solid #cbd5e1; border-radius: 2px; padding: 2px;
+  display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.wbprev .w-empty { border-style: dashed; }
+.wbprev .w-h { display: flex; align-items: baseline; gap: 3px; margin-bottom: 1px; }
+.wbprev .w-n { font-family: var(--mono); font-weight: 700; font-size: 8px; color: #0f172a; }
+.wbprev .w-t { font-weight: 800; font-size: 7px; text-transform: uppercase; color: #0f172a;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wbprev .w-fig { flex: 1; min-height: 0; }
+.wbprev .w-fig svg { width: 100%; height: 100%; display: block; }
+
+/* ============================================================
    Barra superior: en pantalla chica se apila en vez de cortarse.
    ============================================================ */
 @media (max-width: 720px) {

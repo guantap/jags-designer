@@ -29,19 +29,23 @@
   --warn:  oklch(0.75 0.14 80);
   --bad:   oklch(0.62 0.19 25);
 
-  /* --- Piezas: OFENSIVA en familia fría (convención de acetato) --- */
-  --off-X:  oklch(0.66 0.15 240);
-  --off-H:  oklch(0.72 0.13 195);
-  --off-Y:  oklch(0.63 0.15 288);
-  --off-C:  oklch(0.74 0.11 160);
-  --off-QB: oklch(0.56 0.14 258);
+  /* --- Piezas: OFENSIVA, convención de acetato ---
+     Antes las cinco vivían en la franja fría (240-288): sobre la cancha,
+     a un brazo de distancia, X/Y/QB eran el mismo azul. Ahora cada pieza
+     ocupa un cuadrante distinto del círculo de tono Y un escalón distinto
+     de luminancia, así que se distinguen incluso fotocopiadas en gris. */
+  --off-X:  oklch(0.60 0.21 258);   /* azul     */
+  --off-H:  oklch(0.65 0.19 145);   /* verde    */
+  --off-Y:  oklch(0.58 0.26 330);   /* magenta  */
+  --off-C:  oklch(0.70 0.19 58);    /* naranja  */
+  --off-QB: oklch(0.42 0.04 70);    /* grafito  */
 
-  /* --- Piezas: DEFENSIVA en familia cálida --- */
-  --def-1: oklch(0.61 0.18 25);
-  --def-2: oklch(0.67 0.16 48);
-  --def-3: oklch(0.73 0.13 72);
-  --def-4: oklch(0.57 0.17 8);
-  --def-5: oklch(0.64 0.15 35);
+  /* --- Piezas: DEFENSIVA, familia cálida + hueca en el dibujo --- */
+  --def-1: oklch(0.60 0.22 27);
+  --def-2: oklch(0.48 0.16 40);
+  --def-3: oklch(0.68 0.16 85);
+  --def-4: oklch(0.55 0.21 5);
+  --def-5: oklch(0.70 0.13 20);
 
   /* --- Tipografía: una familia, escala fija, ratio 1.2 --- */
   --font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
@@ -124,17 +128,19 @@
   --field-label:      oklch(0.44 0.010 70);
   --field-line:       oklch(0.80 0.007 70);
 
-  /* Piezas oscurecidas: sobre papel al sol, la claridad se pierde */
-  --off-X:  oklch(0.50 0.17 240);
-  --off-H:  oklch(0.53 0.14 195);
-  --off-Y:  oklch(0.47 0.18 288);
-  --off-C:  oklch(0.52 0.13 160);
-  --off-QB: oklch(0.42 0.16 258);
-  --def-1: oklch(0.50 0.20 25);
-  --def-2: oklch(0.54 0.17 48);
-  --def-3: oklch(0.56 0.14 72);
-  --def-4: oklch(0.46 0.19 8);
-  --def-5: oklch(0.52 0.17 35);
+  /* Piezas oscurecidas: sobre papel al sol la claridad se pierde.
+     Estos son los mismos tonos que la tinta de impresión (js/print.js),
+     para que la pantalla en cancha y la muñequera se vean igual. */
+  --off-X:  oklch(0.42 0.22 264);
+  --off-H:  oklch(0.48 0.17 150);
+  --off-Y:  oklch(0.45 0.27 330);
+  --off-C:  oklch(0.52 0.18 48);
+  --off-QB: oklch(0.25 0.03 70);
+  --def-1: oklch(0.47 0.21 27);
+  --def-2: oklch(0.36 0.15 40);
+  --def-3: oklch(0.50 0.14 85);
+  --def-4: oklch(0.42 0.21 5);
+  --def-5: oklch(0.52 0.15 20);
 }
 
 @media (prefers-reduced-motion: reduce) {

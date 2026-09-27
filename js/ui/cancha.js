@@ -59,7 +59,7 @@ export function renderCancha(root, ctx) {
       <div class="cn-grid">
         ${list.length ? list.map(p => `
           <button class="cn-card" data-play="${p.id}">
-            <span class="cn-fig">${thumb(p, { showDepths:true })}</span>
+            <span class="cn-fig">${thumb(p, { showDepths:false })}</span>
             <span class="cn-name">${p.name}</span>
             ${p.situation ? `<span class="cn-sit">${p.situation}</span>` : ''}
           </button>`).join('')
@@ -115,7 +115,7 @@ export function renderCancha(root, ctx) {
   const sheet = (p) => `
     <div class="cn-sheet" role="dialog" aria-label="${p.name}">
       <header><b>${p.name}</b><button class="btn sm" id="cn-close">Cerrar</button></header>
-      <div class="cn-sheet-fig">${thumb(p, { showDepths:true })}</div>
+      <div class="cn-sheet-fig">${thumb(p, { showDepths:false })}</div>
       <p class="notice">¿Qué pasó?</p>
       <div class="cn-res">
         ${RESULTS.map(r => `<button class="btn sm" data-res="${r.id}" data-tone="${r.tone}">${r.label}</button>`).join('')}
